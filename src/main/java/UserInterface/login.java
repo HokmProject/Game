@@ -40,8 +40,4 @@ public class login {
             }
         });
     }
-
-    public static void main(String[] args) {
-        login l1  = new login();
-    }
 }

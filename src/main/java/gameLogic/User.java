@@ -5,7 +5,7 @@ public class User {
     private String name;
     private boolean isHakem;
     private String partner;
-    private Cards[] cards;
+    private ArrayList<Cards> cards;
 
     public boolean getIsHakem() {
         return this.isHakem;
@@ -15,7 +15,7 @@ public class User {
         return this.name;
     }
 
-    public Cards[] getCards() {
+    public ArrayList<Cards> getCards() {
         return this.cards;
     }
 
@@ -23,7 +23,7 @@ public class User {
         this.isHakem = bool;
     }
 
-    public void setCards(Cards[] cards) {
+    public void setCards(ArrayList<Cards> cards) {
         this.cards = cards;
     }
 
