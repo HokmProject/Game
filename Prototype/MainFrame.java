@@ -12,7 +12,18 @@ public class MainFrame extends JFrame {
         this.token = token;
         this.socket = socket;
         setTitle("Hokm Game - " + username);
-        setSize(800, 600);
+
+        JTextArea area = new JTextArea();
+        area.setBounds(20, 20, 793, 500);
+        area.setEditable(true);
+        area.setFont(area.getFont().deriveFont(15f));
+        add(area);
+        //this area can contain 25 lines
+
+        Score.score(this);
+        CardsInterface.cards(this);
+
+        setSize(800, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
@@ -25,3 +36,4 @@ public class MainFrame extends JFrame {
         // Add game components here
     }
 }
+
