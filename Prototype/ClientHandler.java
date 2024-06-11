@@ -1,94 +1,80 @@
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
 
-public class ClientHandler implements Runnable {
-    private Server server;
+public class ClientHandler extends Thread {
     private Socket socket;
-    private ObjectInputStream input;
-    private ObjectOutputStream output;
+    private List<Game> games;
+    private PrintWriter out;
+    private BufferedReader in;
+    private Client client;
 
-    public ClientHandler(Server server, Socket socket) throws IOException {
-        this.server = server;
+    public ClientHandler(Socket socket, List<Game> games) {
         this.socket = socket;
-        this.output = new ObjectOutputStream(socket.getOutputStream());
-        this.input = new ObjectInputStream(socket.getInputStream());
+        this.games = games;
     }
 
     @Override
     public void run() {
         try {
-            while (true) {
-                Object request = input.readObject();
-                Object response = handleRequest(request);
-                sendResponse(response);
-            }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            server.removeClient(this);
-        }
-    }
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-    private Object handleRequest(Object request) {
-        if (request instanceof String) {
-            String command = (String) request;
-            if (command.startsWith("joinGame:")) {
-                String token = command.split(":")[1];
-                // Implement logic to join an existing game using the token
-                boolean joined = joinGameWithToken(token);
-                if (joined) {
-                    return "Joined Game with Token: " + token;
-                } else {
-                    return "Failed to Join Game with Token: " + token;
-                }
-            } else if (command.equals("joinRandomGame")) {
-                boolean joined = joinRandomGame();
-                if (joined) {
-                    return "Joined a Random Game With Token : " + Game.getToken();
-                } else {
-                    return "Failed to Join a Random Game";
+            String request;
+            while ((request = in.readLine()) != null) {
+                if (request.startsWith("CREATE ")) {
+                    handleCreateGame(request.substring(7));
+                } else if (request.startsWith("JOIN ")) {
+                    handleJoinGame(request.substring(5));
                 }
             }
-            switch (command) {
-                case "createGame":
-                    server.createNewGame(new Game());
-                    return "Game Created Token: " + Game.getToken();
-                default:
-                    return "Unknown Command";
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void handleCreateGame(String username) {
+        try {
+            client = new Client(username, socket);
+            synchronized (games) {
+                for (Game game : games) {
+                    if (game.hasPlayer(username)) {
+                        out.println("USERNAME_TAKEN");
+                        return;
+                    }
+                }
+
+                Game game = new Game(client);
+                games.add(game);
+                out.println("GAME_CREATED " + game.getToken());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void handleJoinGame(String command) {
+        synchronized (games) {
+            if (command.equals("RANDOM")) {
+                for (Game game : games) {
+                    if (!game.isFull()) {
+                        game.addPlayer(client);
+                        out.println("JOINED_GAME " + game.getToken());
+                        return;
+                    }
+                }
+                out.println("NO_AVAILABLE_GAMES");
+            } else if (command.startsWith("TOKEN ")) {
+                String token = command.substring(6);
+                for (Game game : games) {
+                    if (game.getToken().equals(token)) {
+                        game.addPlayer(client);
+                        out.println("JOINED_GAME " + token);
+                        return;
+                    }
+                }
+                out.println("GAME_NOT_FOUND");
             }
         }
-        return "Invalid Request";
-    }
-
-    private boolean joinGameWithToken(String token) {
-        // Implement the logic to join a game with the provided token
-        for (Game game : server.getGames()) {
-            if (game.getToken().equals(token)) {
-                // Logic to add player to the game
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean joinRandomGame() {
-        // Implement the logic to join a random game
-        if (!server.getGames().isEmpty()) {
-            Game game = server.getGames().get(0); // For simplicity, join the first game
-            // Logic to add player to the game
-            return true;
-        }
-        return false;
-    }
-
-    public void sendResponse(Object response) throws IOException {
-        output.writeObject(response);
     }
 }
-
-

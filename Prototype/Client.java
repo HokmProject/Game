@@ -1,32 +1,35 @@
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 
 public class Client {
+    private String username;
     private Socket socket;
-    private ObjectOutputStream output;
-    private ObjectInputStream input;
-    public String ClientName;
-    private int id;
-    private static int idCounter = 1;
+    private PrintWriter out;
+    private BufferedReader in;
 
-    public Client(String address, int port , String ClientName) throws IOException {
-        this.id = idCounter++;
-        this.ClientName = ClientName;
-        socket = new Socket(address, port);
-        output = new ObjectOutputStream(socket.getOutputStream());
-        input = new ObjectInputStream(socket.getInputStream());
+    public Client(String username, Socket socket) throws IOException {
+        this.username = username;
+        this.socket = socket;
+        this.out = new PrintWriter(socket.getOutputStream(), true);
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
     }
 
-    public void sendRequest(Object request) throws IOException {
-        output.writeObject(request);
+    public String getUsername() {
+        return username;
     }
 
-    public Object receiveResponse() throws IOException, ClassNotFoundException {
-        return input.readObject();
+    public Socket getSocket() {
+        return socket;
     }
 
-    public void close() throws IOException {
-        socket.close();
+    public PrintWriter getOut() {
+        return out;
+    }
+
+    public BufferedReader getIn() {
+        return in;
     }
 }
-

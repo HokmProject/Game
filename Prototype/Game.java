@@ -1,10 +1,17 @@
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Game {
+    private static List<Client> Players;
     private static String Token;
 
-    Game(){
+    Game(Client Creator) throws IOException {
+
         this.Token = TokenGenerator(20);
+        this.Players = new ArrayList<>();
+        this.Players.add(Creator);
+
     }
 
     static String TokenGenerator(int n)
@@ -28,8 +35,24 @@ public class Game {
 
         return sb.toString();
     }
+    public boolean hasPlayer(String username) {
+        return Players.stream().anyMatch(player -> player.getUsername().equals(username));
+    }
 
-    public static String getToken(){
+    public void addPlayer(Client client) {
+        Players.add(client);
+    }
+
+    public String getToken() {
         return Token;
     }
+
+    public List<Client> getPlayers() {
+        return Players;
+    }
+
+    public boolean isFull() {
+        return Players.size() == 4;
+    }
 }
+

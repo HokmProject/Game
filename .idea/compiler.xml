@@ -9,5 +9,8 @@
         <module name="game" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="game" target="17" />
+    </bytecodeTargetLevel>
   </component>
 </project>

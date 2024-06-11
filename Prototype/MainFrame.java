@@ -1,33 +1,27 @@
 import javax.swing.*;
 import java.awt.*;
+import java.net.Socket;
 
-public class MainFrame {
-    public static JFrame mainFrame;
+public class MainFrame extends JFrame {
+    private String username;
+    private String token;
+    private Socket socket;
 
+    public MainFrame(String username, String token, Socket socket) {
+        this.username = username;
+        this.token = token;
+        this.socket = socket;
+        setTitle("Hokm Game - " + username);
+        setSize(800, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setLocationRelativeTo(null);
+        setLayout(new BorderLayout());
 
-    public MainFrame() {
-        mainFrame = new JFrame("Hokm");
+        JLabel tokenLabel = new JLabel("Game Token: " + token);
+        tokenLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        tokenLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        add(tokenLabel, BorderLayout.NORTH);
 
-        JTextArea area = new JTextArea();
-        area.setBounds(10, 10, 793, 500);
-        area.setEditable(false);
-        area.setFont(area.getFont().deriveFont(15f));
-        mainFrame.add(area);
-        //this area can contain 25 lines
-
-        Score.score(mainFrame);
-        CardsInterface.cards(mainFrame);
-
-        mainFrame.setSize(823, 765);
-        mainFrame.setLayout(null);
-        mainFrame.setVisible(true);
-        mainFrame.setResizable(false);
-        mainFrame.setLocationRelativeTo(null);
-        mainFrame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-
-    }
-
-    public static void main(String[] args) {
-        new MainFrame();
+        // Add game components here
     }
 }
