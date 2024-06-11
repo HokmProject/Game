@@ -54,27 +54,37 @@ public class ClientHandler extends Thread {
     }
 
     private void handleJoinGame(String command) {
-        synchronized (games) {
-            if (command.equals("RANDOM")) {
-                for (Game game : games) {
-                    if (!game.isFull()) {
-                        game.addPlayer(client);
-                        out.println("JOINED_GAME " + game.getToken());
-                        return;
+        try {
+            client = new Client(in.readLine(), socket);
+            synchronized (games) {
+                if (command.equals("RANDOM")) {
+                    for (Game game : games) {
+                        if (!game.isFull()) {
+                            if (game.addPlayer(client)) {
+                                out.println("JOINED_GAME " + game.getToken());
+                                return;
+                            }
+                        }
                     }
-                }
-                out.println("NO_AVAILABLE_GAMES");
-            } else if (command.startsWith("TOKEN ")) {
-                String token = command.substring(6);
-                for (Game game : games) {
-                    if (game.getToken().equals(token)) {
-                        game.addPlayer(client);
-                        out.println("JOINED_GAME " + token);
-                        return;
+                    out.println("NO_AVAILABLE_GAMES");
+                } else if (command.startsWith("TOKEN ")) {
+                    String token = command.substring(6);
+                    for (Game game : games) {
+                        if (game.getToken().equals(token)) {
+                            if (game.addPlayer(client)) {
+                                out.println("JOINED_GAME " + token);
+                                return;
+                            } else {
+                                out.println("GAME_FULL");
+                                return;
+                            }
+                        }
                     }
+                    out.println("GAME_NOT_FOUND");
                 }
-                out.println("GAME_NOT_FOUND");
             }
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 }

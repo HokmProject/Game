@@ -8,7 +8,7 @@ public class MainMenu extends JFrame {
 
     public MainMenu() {
         setTitle("Hokm Game");
-        setSize(300, 150);
+        setSize(300, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
@@ -16,8 +16,8 @@ public class MainMenu extends JFrame {
         createGameButton = new JButton("Create Game");
         joinGameButton = new JButton("Join Game");
 
-        createGameButton.setBounds(50, 30, 200, 30);
-        joinGameButton.setBounds(50, 70, 200, 30);
+        createGameButton.setBounds(50, 50, 200, 50);
+        joinGameButton.setBounds(50, 110, 200, 50);
 
         add(createGameButton);
         add(joinGameButton);
@@ -33,14 +33,13 @@ public class MainMenu extends JFrame {
         joinGameButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                new JoinGameFrame().setVisible(true);
+                new JoinGameUsernameFrame().setVisible(true);
                 dispose();
             }
         });
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new MainMenu().setVisible(true));
+        new MainMenu().setVisible(true);
     }
 }
-

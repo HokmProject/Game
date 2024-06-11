@@ -5,13 +5,15 @@ import java.io.*;
 import java.net.Socket;
 
 public class JoinGameFrame extends JFrame {
+    private String username;
     private JTextField tokenField;
     private JButton joinRandomButton;
     private JButton joinWithTokenButton;
 
-    public JoinGameFrame() {
+    public JoinGameFrame(String username) {
+        this.username = username;
         setTitle("Join Game");
-        setSize(300, 150);
+        setSize(300, 200);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(null);
@@ -58,19 +60,21 @@ public class JoinGameFrame extends JFrame {
             BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             out.println("JOIN " + command);
+            out.println(username);
             String response = in.readLine();
             if (response.startsWith("GAME_NOT_FOUND")) {
                 JOptionPane.showMessageDialog(null, "Game not found. Try another one.");
             } else if (response.startsWith("JOINED_GAME")) {
                 String token = response.substring(12);
-                new MainFrame(token, token, socket).setVisible(true);
+                new MainFrame(username, token, socket).setVisible(true);
                 dispose();
             } else if (response.equals("NO_AVAILABLE_GAMES")) {
                 JOptionPane.showMessageDialog(null, "No available games. Try again later.");
+            } else if (response.equals("GAME_FULL")) {
+                JOptionPane.showMessageDialog(null, "Game is full. Try another one.");
             }
         } catch (IOException ex) {
             ex.printStackTrace();
         }
     }
 }
-

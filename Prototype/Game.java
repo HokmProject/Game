@@ -39,8 +39,12 @@ public class Game {
         return Players.stream().anyMatch(player -> player.getUsername().equals(username));
     }
 
-    public void addPlayer(Client client) {
-        Players.add(client);
+    public boolean addPlayer(Client client) {
+        if (Players.size() < 4) {
+            Players.add(client);
+            return true;
+        }
+        return false;
     }
 
     public String getToken() {
