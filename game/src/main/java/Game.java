@@ -1,10 +1,19 @@
-
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Game {
-    private String Token;
+    private static List<Client> Players;
+    private static String Token;
+    private boolean gameStarted;
 
-    Game(){
+    Game(Client Creator) throws IOException {
+
         this.Token = TokenGenerator(20);
+        this.Players = new ArrayList<>();
+        this.Players.add(Creator);
+        this.gameStarted = false;
+
     }
 
     static String TokenGenerator(int n)
@@ -28,8 +37,50 @@ public class Game {
 
         return sb.toString();
     }
+    public boolean hasPlayer(String username) {
+        return Players.stream().anyMatch(player -> player.getUsername().equals(username));
+    }
 
-    public String getToken(){
-        return this.Token;
+    public boolean addPlayer(Client client) {
+        if (Players.size() < 4) {
+            Players.add(client);
+            return true;
+        }
+        return false;
+    }
+
+    public String getToken() {
+        return Token;
+    }
+
+    public List<Client> getPlayers() {
+        return Players;
+    }
+
+    public boolean isFull() {
+        return Players.size() == 4;
+    }
+
+    public void startGame(){
+        if(isFull() && !gameStarted){
+            gameStarted = true;
+            ShuffleCards();
+            //Notify all players that the game has been started
+            for(Client player : Players){
+//                player.notifyGameStarted();
+            }
+        }
+    }
+
+    public boolean isGameStarted(){
+        return gameStarted;
+    }
+    public void ShuffleCards(){
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 4; j++) {
+//                Players.get(i).getCards().get(j).Shuffle();
+            }
+        }
     }
 }
+

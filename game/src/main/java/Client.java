@@ -1,202 +1,97 @@
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Socket;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.Scanner;
+import java.util.ArrayList;
 
-public class Client{
+public class Client {
+    private String username;
     private Socket socket;
-    private BufferedReader bufferedReader;
-    private BufferedWriter bufferedWriter;
-    private ObjectOutputStream output;
-    private ObjectInputStream input;
-    private String PlayerUserName;
-    private int id;
-    private static int idCounter = 1;
-//    public Client(Socket socket , String PlayerUserName){
-//        try {
-//            this.id = idCounter++;
-//            this.socket = socket;
-//            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-//            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            this.PlayerUserName = PlayerUserName;
-//        } catch (Exception e) {
-//            closeEverything(socket , bufferedWriter, bufferedReader);
+    private PrintWriter out;
+    private BufferedReader in;
+
+    private boolean isHakem;
+    private String partner;
+    private ArrayList<Cards> cards;
+
+
+    public Client(String username, Socket socket) throws IOException {
+        this.username = username;
+        this.socket = socket;
+        this.out = new PrintWriter(socket.getOutputStream(), true);
+        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+        this.isHakem = false;
+    }
+
+//    public void notifyGameStarted() {
+//        // Update GUI to show the start button for the client who created the game
+//        if (this == game.getPlayers().get(0)) {
+//            Platform.runLater(() -> {
+//                // Show start button in the GUI
+//            });
 //        }
+//
+//        // Update GUI to display the shuffled cards for all players
+//        Platform.runLater(() -> {
+//            // Update GUI to display the shuffled cards
+//        });
 //    }
-
-    public Client(String address, int port) throws IOException {
-        socket = new Socket(address, port);
-        output = new ObjectOutputStream(socket.getOutputStream());
-        input = new ObjectInputStream(socket.getInputStream());
-    }
-    public void sendMessage(){
-        try{
-            bufferedWriter.write(PlayerUserName);
-            bufferedWriter.newLine();
-            bufferedWriter.flush();
-            Scanner scanner = new Scanner(System.in);
-            while(socket.isConnected()) {
-                String messageToSend = scanner.nextLine();
-                bufferedWriter.write(PlayerUserName + " : " + messageToSend );
-                bufferedWriter.newLine();
-                bufferedWriter.flush();
-            }
-        } catch (IOException e) {
-            closeEverything(socket , bufferedWriter , bufferedReader);
-        }
+    public String getUsername() {
+        return username;
     }
 
-    public void listenformessage(){
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    while (socket.isConnected()) {
-                        String message = bufferedReader.readLine();
-                        System.out.println(message);
+    public void sendGameState(HokmGame game) {
+        // Serialize game state and send to client
+        out.println("GAME_STATE " + serializeGameState(game));
+    }
+
+    public void sendRoundResult(Client roundWinner) {
+        out.println("ROUND_RESULT " + roundWinner.getUsername());
+    }
+
+    private String serializeGameState(HokmGame game) {
+        // Convert the game state to a string format
+        return ""; // Implement actual serialization logic
+    }
+
+    public void handleServerMessages() {
+        // Listen to server messages and update UI accordingly
+        new Thread(() -> {
+            try {
+                String message;
+                while ((message = in.readLine()) != null) {
+                    if (message.startsWith("GAME_STATE ")) {
+                        // Update the client UI with the new game state
+                        //this is where we write the game state in the text filed of mainFrame
+                    } else if (message.startsWith("ROUND_RESULT ")) {
+                        // Update the client UI with the round result
+                        //this is where we update the result in Score class
                     }
-                } catch (IOException e) {
-                    closeEverything(socket, bufferedWriter, bufferedReader);
                 }
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }).start();
     }
 
-    private void closeEverything(Socket socket, BufferedWriter bufferedWriter, BufferedReader bufferedReader) {
-        try {
-            if (socket!= null) {
-                socket.close();
-            }
-            if (bufferedWriter!= null) {
-                bufferedWriter.close();
-            }
-            if (bufferedReader!= null) {
-                bufferedReader.close();
-            }
-        } catch (IOException e) {
-            closeEverything(socket , bufferedWriter, bufferedReader);
-        }
+    public boolean getIsHakem() {
+        return this.isHakem;
     }
 
-    public void sendRequest(Object request) throws IOException {
-        output.writeObject(request);
+    public ArrayList<Cards> getCards() {
+        return this.cards;
     }
 
-    public Object receiveResponse() throws IOException, ClassNotFoundException {
-        return input.readObject();
+    public void setHakem(boolean bool) {
+        this.isHakem = bool;
     }
 
-
-    public static void main(String[] args) throws IOException {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Enter your Username: ");
-        String PlayerUserName = scanner.nextLine();
-        Socket socket = new Socket("localhost" , 12345);
-        Client client = new Client(socket, PlayerUserName);
-        //these two methods are separate threads, so they can run at the same time
-        client.listenformessage();
-        client.sendMessage();
+    public void setCards(ArrayList<Cards> cards) {
+        this.cards = cards;
     }
 
-    public int getId() {
-        return id;
-    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//import java.io.*;
-//import java.net.Socket;
-//
-//public class Client {
-//    private Socket socket;
-//    private ObjectOutputStream output;
-//    private ObjectInputStream input;
-//
-//    public Client(String address, int port) throws IOException {
-//        socket = new Socket(address, port);
-//        output = new ObjectOutputStream(socket.getOutputStream());
-//        input = new ObjectInputStream(socket.getInputStream());
-//    }
-//
-//
-//    public void sendRequest(Object request) throws IOException {
-//        output.writeObject(request);
-//    }
-//
-//    public Object receiveResponse() throws IOException, ClassNotFoundException {
-//        return input.readObject();
-//    }
-//
-//    public void close() throws IOException {
-//        socket.close();
-//    }
-//
-//    public static void main(String[] args) {
-//        try {
-//            Client client = new Client("localhost", 12345);
-//            // Example interaction: creating a game
-//            client.sendRequest("CREATE_GAME");
-//            Object response = client.receiveResponse();
-//            System.out.println("Response: " + response);
-//            client.close();
-//        } catch (IOException | ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
-//_________________________________________________________________________________________________________________
-//import java.io.*;
-//import java.net.Socket;
-//
-//public class Client {
-//    private Socket socket;
-//    private ObjectOutputStream output;
-//    private ObjectInputStream input;
-//
-//    public Client(String address, int port) throws IOException {
-//        socket = new Socket(address, port);
-//        output = new ObjectOutputStream(socket.getOutputStream());
-//        input = new ObjectInputStream(socket.getInputStream());
-//    }
-//
-//    public void sendRequest(Object request) throws IOException {
-//        output.writeObject(request);
-//    }
-//
-//    public Object receiveResponse() throws IOException, ClassNotFoundException {
-//        return input.readObject();
-//    }
-//
-//    public void close() throws IOException {
-//        socket.close();
-//    }
-//
-//    public static void main(String[] args) {
-//        try {
-//            Client client = new Client("localhost", 12345);
-//            // Example interaction: creating a game
-//            client.sendRequest("createGame");
-//            Object response = client.receiveResponse();
-//            System.out.println("Response: " + response);
-//            client.close();
-//        } catch (IOException | ClassNotFoundException e) {
-//            e.printStackTrace();
-//        }
-//    }
-//}
-
-
-

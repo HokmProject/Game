@@ -1,306 +1,110 @@
-
 import java.io.*;
 import java.net.Socket;
-import java.util.ArrayList;
+import java.util.List;
 
-public class ClientHandler implements Runnable {
-    public static ArrayList<ClientHandler> ClientHandlers = new ArrayList<>();
-    private Server server;
+public class ClientHandler extends Thread {
     private Socket socket;
+    private List<Game> games;
+    private PrintWriter out;
+    private BufferedReader in;
     private Client client;
-//    private BufferedReader bufferedReader;
-//    private BufferedWriter bufferedWriter;
-    private String PlayerUserName;
-    private ObjectInputStream input;
-    private ObjectOutputStream output;
 
-//    public ClientHandler(Socket socket){
-//        try{
-//            this.socket = socket;
-//            //OutputStreamWriter is a Character stream
-//            //Bufferedwriter is only here to increase efficiency
-//
-//            //this is what we are doing to send
-//            this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-//            //this is what we are doing to Read
-//            this.bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//            this.PlayerUserName = bufferedReader.readLine();
-//            this.player = new Client(socket , PlayerUserName);
-//            //add the clientHandleer to clienthanlder List
-//            ClientHandlers.add(this);
-//            broadcastMessage("Server: " + PlayerUserName + " has entered");
-//        } catch (IOException e) {
-//            closeEverything(socket , bufferedWriter , bufferedReader);
-//        }
-//    }
-    public ClientHandler(Server server, Socket socket) throws IOException {
-        this.server = server;
+    public ClientHandler(Socket socket, List<Game> games) {
         this.socket = socket;
-        this.client = new Client("localhost", 12345);
-        this.input = new ObjectInputStream(socket.getInputStream());
-        this.output = new ObjectOutputStream(socket.getOutputStream());
+        this.games = games;
     }
+
     @Override
     public void run() {
-        String messageFromPlayer;
-        while (socket.isConnected()) {
-            try {
-                Object request = input.readObject();
-                Object response = handleRequest(request);
-                sendResponse(response);
-                messageFromPlayer = bufferedReader.readLine();
-                broadcastMessage(PlayerUserName + ": " + messageFromPlayer);
-            } catch (IOException | ClassNotFoundException e) {
-                closeEverything(socket, bufferedWriter, bufferedReader);
-                e.printStackTrace();
-                break;
-            }
-        }
-    }
-
-
-
-    private Object handleRequest(Object request) {
-        // Implement logic to handle different types of requests from the client
-        if (request instanceof String) {
-            String command = (String) request;
-            switch (command) {
-                case "createGame":
-                    // Logic to create a new game
-                    Server.createGame();
-                    return "Game Created";
-                case "joinGame":
-                    // Logic to join an existing game
-                    return "Joined Game";
-                // Add more cases as needed
-            }
-        }
-        return "Unknown Command";
-    }
-
-    public void sendResponse(Object response) throws IOException {
-        output.writeObject(response);
-    }
-
-    //this is where the client interacts with the game, and it updates the game state for other players
-    public void broadcastMessage(String message) {
-        for(ClientHandler clientHandler : ClientHandlers){
-            try{
-                //this or not this can be changed
-                if(!clientHandler.PlayerUserName.equals(this.PlayerUserName)){
-                    clientHandler.bufferedWriter.write(message);
-                    clientHandler.bufferedWriter.newLine();
-                    clientHandler.bufferedWriter.flush();
-                };
-            } catch (IOException e) {
-                closeEverything(socket, bufferedWriter , bufferedReader);
-            }
-
-        }
-    }
-    public void removeClientHandler(){
-        ClientHandlers.remove(this);
-        broadcastMessage("SERVER : " + PlayerUserName + " has left the game !");
-    }
-    public void closeEverything(Socket socket, BufferedWriter bufferedWriter, BufferedReader bufferedreader){
-        removeClientHandler();
         try {
-            if(socket != null){
-                socket.close();
+            out = new PrintWriter(socket.getOutputStream(), true);
+            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+
+            String request;
+            while ((request = in.readLine()) != null) {
+                if (request.startsWith("CREATE ")) {
+                    handleCreateGame(request.substring(7));
+                } else if (request.startsWith("JOIN ")) {
+                    handleJoinGame(request.substring(5));
+                } else if (request.startsWith("PLAY_CARD ")) {
+                    handlePlayCard(request.substring(10));
+                }
             }
-            if(bufferedWriter != null){
-                bufferedWriter.close();
-            }
-            if(bufferedReader != null){
-                bufferedReader.close();
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 
-    public Client getPlayer() {
-        return player;
+    private void handleCreateGame(String username) {
+        try {
+            client = new Client(username, socket);
+            synchronized (games) {
+                for (Game game : games) {
+                    if (game.hasPlayer(username)) {
+                        out.println("USERNAME_TAKEN");
+                        return;
+                    }
+                }
+
+                Game game = new Game(client);
+                games.add(game);
+                out.println("GAME_CREATED " + game.getToken());
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
     }
 
+    private void handleJoinGame(String command) {
+        try {
+            client = new Client(in.readLine(), socket);
+            synchronized (games) {
+                if (command.equals("RANDOM")) {
+                    for (Game game : games) {
+                        if (!game.isFull()) {
+                            if (game.addPlayer(client)) {
+                                out.println("JOINED_GAME " + game.getToken());
+                                return;
+                            }
+                        }
+                    }
+                    out.println("NO_AVAILABLE_GAMES");
+                } else if (command.startsWith("TOKEN ")) {
+                    String token = command.substring(6);
+                    for (Game game : games) {
+                        if (game.getToken().equals(token)) {
+                            if (game.addPlayer(client)) {
+                                out.println("JOINED_GAME " + token);
+                                return;
+                            } else {
+                                out.println("GAME_FULL");
+                                return;
+                            }
+                        }
+                    }
+                    out.println("GAME_NOT_FOUND");
+                }
+            }
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    private void handlePlayCard(String cardData) {
+        // Extract game token and card info from cardData
+        String[] parts = cardData.split(" ", 2);
+        String token = parts[0];
+//        Card card = new Card(parts[1]);
+
+        // Find the game and let the client play the card
+        synchronized (games) {
+            for (Game game : games) {
+                if (game.getToken().equals(token)) {
+//                    game.getHokmGame().playCard(client, card);
+                    return;
+                }
+            }
+        }
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//package com.example;
-//
-//import java.io.BufferedReader;
-//import java.io.IOException;
-//import java.io.InputStreamReader;
-//import java.io.PrintWriter;
-//import java.net.Socket;
-//
-//public class ClientHandler implements Runnable {
-//    private Socket clientSocket;
-//    private Server server;
-//    private PrintWriter out;
-//    private BufferedReader in;
-//    private int clientId;
-//    private static int idCounter = 1;
-//
-//    public ClientHandler(Socket socket, Server server) {
-//        this.clientSocket = socket;
-//        this.server = server;
-//        this.clientId = idCounter++;
-//    }
-//
-//    @Override
-//    public void run() {
-//        try {
-//            System.out.println("You are connected to the Server");
-//            out = new PrintWriter(clientSocket.getOutputStream(), true);
-//            in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
-//            String inputLine;
-//
-//            while ((inputLine = in.readLine()) != null) {
-//                System.out.println("Received from client " + clientId + ": " + inputLine);
-//                processInput(inputLine);
-//            }
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        } finally {
-//            try {
-//                in.close();
-//                out.close();
-//                clientSocket.close();
-////                server.removeClient(this);
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    private void processInput(String input) {
-//        // Example command: "CREATE_GAME"
-//        // Example command: "JOIN_GAME <gameToken>"
-//        if (input.startsWith("CREATE_GAME")) {
-//            Game game = new Game();
-//            server.createNewGame(game);
-//            out.println("Game created with token: " + game.getToken());
-//
-//        } else if (input.startsWith("JOIN_GAME")) {
-//            String[] parts = input.split(" ");
-//            String gameToken = null;
-//            if (parts.length == 2) {
-//                gameToken = parts[1];
-////                Game game = findGameByToken(gameToken);
-////                if (game != null) {
-////                    // Add player to the game
-////                    Player player = new Player("Player" + clientId);
-////                    game.addPlayer(player);
-//                out.println("You Are added to the game with id of : " + clientId);
-//                out.println("Joined game with token: " + gameToken);
-//            } else {
-//                out.println("Game not found with token: " + gameToken);
-//            }
-//        } else {
-//                out.println("Invalid JOIN_GAME command");
-//            }
-//    }
-
-//    private Game findGameByToken(String token) {
-//        for (Game game : server.getGames()) {
-//            if (game.getToken().equals(token)) {
-//                return game;
-//            }
-//        }
-//        return null;
-//    }
-//}
-
-//____________________________________________________________________________________________________
-//
-//import com.example.Client;
-//import com.example.Server;
-
-//import java.io.*;
-//import java.net.Socket;
-//
-//public class ClientHandler implements Runnable {
-//    private Server server;
-//    private Socket socket;
-//    private Client client;
-//    private ObjectInputStream input;
-//    private ObjectOutputStream output;
-//
-//    public ClientHandler(Server server, Socket socket) throws IOException {
-//        this.server = server;
-//        this.socket = socket;
-//        this.client = new Client("localhost", 12345);
-//        this.input = new ObjectInputStream(socket.getInputStream());
-//        this.output = new ObjectOutputStream(socket.getOutputStream());
-//    }
-//
-//    public Client getClient() {
-//        return client;
-//    }
-//
-//    @Override
-//    public void run() {
-//        try {
-//            while (true) {
-//                Object request = input.readObject();
-//                handleRequest(request);
-//            }
-//        } catch (IOException | ClassNotFoundException e) {
-//            e.printStackTrace();
-//        } finally {
-//            try {
-//                socket.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    private void handleRequest(Object request) {
-//        // Implement logic to handle different types of requests from the client
-//        if (request instanceof String) {
-//            String command = (String) request;
-//            switch (command) {
-//                case "createGame":
-//                    // Logic to create a new game
-//                    break;
-//                case "joinGame":
-//                    // Logic to join an existing game
-//                    break;
-//                // Add more cases as needed
-//            }
-//        }
-//    }
-//
-//    public void sendResponse(Object response) throws IOException {
-//        output.writeObject(response);
-//    }
-//}
 
