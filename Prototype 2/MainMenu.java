@@ -1,0 +1,29 @@
+import javax.swing.*;
+import java.awt.*;
+
+public class MainMenu extends JFrame {
+    private Client client;
+
+    public MainMenu(Client client) {
+        this.client = client;
+
+        setTitle("Hokm Game - Main Menu");
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(400, 300);
+        setLayout(new BorderLayout());
+
+        JPanel menuPanel = new JPanel();
+        JButton createGameButton = new JButton("Create a Game");
+        JButton joinGameButton = new JButton("Join a Game");
+
+        createGameButton.addActionListener(e -> client.showCreateGameDialog());
+        joinGameButton.addActionListener(e -> client.showJoinGameDialog());
+
+        menuPanel.add(createGameButton);
+        menuPanel.add(joinGameButton);
+        add(menuPanel, BorderLayout.CENTER);
+
+        setVisible(true);
+    }
+}
+
