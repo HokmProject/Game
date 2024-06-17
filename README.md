@@ -1,6 +1,6 @@
 # Game
 You can use the "PROTOTYPE" directory to test your code before commiting and updating the "GAME" directory
-Can be used for Testing the GUI , Server & Client Connections 
+Can be used for Testing the GUI , Server & Client Connections...
 
 # Hokm Game
 
