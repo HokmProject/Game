@@ -96,8 +96,4 @@ public class Cards {
             new Cards("G", "K", 13, "KG" , "deck/KG.gif"),
     };
 
-
-    public static void main(String[] args) {
-        // login l1 = new login();
-    }
 }

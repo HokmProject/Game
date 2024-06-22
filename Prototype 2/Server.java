@@ -4,16 +4,20 @@ import java.util.*;
 
 public class Server {
     private static final int PORT = 12345;
-    static Map<String, Game> activeGames = new HashMap<>();
-    static Set<String> activeUsers = new HashSet<>();
-    static List<Game> waitingGames = new ArrayList<>();
+    static Map<String, Game> activeGames = new HashMap<>(); // A Hashmap with key of Token and Game object value
+    static Set<String> activeUsers = new HashSet<>(); // A Set with values of usernames , so there won't be duplicates
+    static List<Game> waitingGames = new ArrayList<>(); // A List of Game objects that are waiting for players to join
 
     public static void main(String[] args) {
-        System.out.println("Game server started...");
+        System.out.println("[SERVER] : Game server started...");
         try (ServerSocket serverSocket = new ServerSocket(PORT)) {
+            /*
+            The ServerSocket class represents a socket that listens for connection requests
+            from clients on a specified port
+             */
             while (true) {
                 Socket socket = serverSocket.accept();
-                new ClientHandler(socket).start();
+                new ClientHandler(socket).start(); // for each client , a new clienthandler is created
             }
         } catch (IOException e) {
             e.printStackTrace();

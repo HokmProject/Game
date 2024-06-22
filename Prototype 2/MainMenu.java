@@ -16,8 +16,9 @@ public class MainMenu extends JFrame {
         JButton createGameButton = new JButton("Create a Game");
         JButton joinGameButton = new JButton("Join a Game");
 
-        createGameButton.addActionListener(e -> client.showCreateGameDialog());
-        joinGameButton.addActionListener(e -> client.showJoinGameDialog());
+        createGameButton.addActionListener(e -> client.showCreateGameDialog()); // the Method of sending a Create
+                                                                                //request from client is called
+        joinGameButton.addActionListener(e -> client.showJoinGameDialog()); // for joining a Game
 
         menuPanel.add(createGameButton);
         menuPanel.add(joinGameButton);
