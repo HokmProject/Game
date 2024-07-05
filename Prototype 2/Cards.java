@@ -1,5 +1,6 @@
+import java.io.Serializable;
 
-public class Cards {
+public class Cards implements Serializable {
     private String suit;
     private String number;
 
@@ -49,7 +50,7 @@ public class Cards {
             new Cards("P", "10", 9, "10P" , "deck/10P.gif"),
             new Cards("P", "J", 10, "JP" , "deck/JP.gif"),
             new Cards("P", "Q", 11, "QP" , "deck/QP.gif"),
-            new Cards("P", "K", 13, "KP" , "deck/KP.gif"),
+            new Cards("P", "K", 12, "KP" , "deck/KP.gif"),
     };
 
     static Cards[] khesht = {
@@ -63,9 +64,9 @@ public class Cards {
             new Cards("KH", "8", 7, "8K" , "deck/8K.gif"),
             new Cards("KH", "9", 8, "9K" , "deck/9K.gif"),
             new Cards("KH", "10", 9, "10K" , "deck/10K.gif"),
-            new Cards("KH", "J", 10, "JK" , "deck/10J.gif"),
-            new Cards("KH", "Q", 11, "QK" , "deck/11K.gif"),
-            new Cards("KH", "K", 13, "KK" , "deck/13K.gif"),
+            new Cards("KH", "J", 10, "JK" , "deck/JK.gif"),
+            new Cards("KH", "Q", 11, "QK" , "deck/QK.gif"),
+            new Cards("KH", "K", 12, "KK" , "deck/KK.gif"),
     };
 
     static Cards[] del = {
@@ -81,7 +82,7 @@ public class Cards {
             new Cards("D", "10", 9, "10D", "deck/10D.gif"),
             new Cards("D", "J", 10, "JD", "deck/JD.gif"),
             new Cards("D", "Q", 11, "QD", "deck/QD.gif"),
-            new Cards("D", "K", 13, "KD", "deck/KD.gif")
+            new Cards("D", "K", 12, "KD", "deck/KD.gif")
     };
 
     static Cards[] geshniz = {
@@ -97,7 +98,7 @@ public class Cards {
             new Cards("G", "10", 9, "10G" , "deck/10G.gif"),
             new Cards("G", "J", 10, "JG" , "deck/JG.gif"),
             new Cards("G", "Q", 11, "QG" , "deck/QG.gif"),
-            new Cards("G", "K", 13, "KG" , "deck/KG.gif"),
+            new Cards("G", "K", 12, "KG" , "deck/KG.gif"),
     };
 
 

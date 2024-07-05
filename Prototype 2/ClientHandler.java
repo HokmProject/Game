@@ -1,42 +1,49 @@
 import javax.swing.*;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-class ClientHandler extends Thread {
+import static java.lang.System.out;
+
+class ClientHandler extends Thread implements Serializable {
     private Socket socket;
-    private BufferedReader in;
-    private PrintWriter out;
+    private ObjectInputStream ois;
+    private ObjectOutputStream oos;
     private String username;
     private Game game;
-    private static Map<String, MainFrame> clients = new HashMap<>();
-
+    private boolean isHakem;
+    private MainFrame mainframe;
+    private ArrayList<Cards> playercards;
     public ClientHandler(Socket socket) {
         this.socket = socket;
+        isHakem = false;
+        this.playercards = new ArrayList<>();
     }
 
     public void run() {
         try {
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            out = new PrintWriter(socket.getOutputStream(), true);
+            ois = new ObjectInputStream(socket.getInputStream());
+            oos = new ObjectOutputStream(socket.getOutputStream());
             while (true) {
-                String command = in.readLine();
-                if (command.startsWith("CREATE_GAME")) {
-                    handleCreateGame(command);
-                } else if (command.startsWith("JOIN_GAME")) {
-                    handleJoinGame(command);
-                } else if (command.startsWith("JOIN_RANDOM_GAME")) {
-                    handleJoinRandomGame(command);
-                } else if (command.startsWith("START_GAME")) {
-                    handleStartGame(command);
+                Object command = ois.readObject();
+                if (command instanceof String && ((String) command).startsWith("CREATE_GAME")) {
+                    handleCreateGame((String) command);
+                } else if (command instanceof String && ((String) command).startsWith("JOIN_GAME")) {
+                    handleJoinGame((String) command);
+                } else if (command instanceof String && ((String) command).startsWith("JOIN_RANDOM_GAME")) {
+                    handleJoinRandomGame((String) command);
+                } else if (command instanceof String && ((String) command).startsWith("START_GAME")) {
+                    handleStartGame((String) command);
+                }else if(command instanceof MainFrame) {
+                    mainframe = (MainFrame) command;
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         } finally {
             try {
                 socket.close();
@@ -52,12 +59,21 @@ class ClientHandler extends Thread {
         }
     }
 
-    private void handleCreateGame(String command) {
+    @Deprecated
+    private void handleAddClient(ClientHandler clienthandler) throws IOException {
+        if(Server.clientHandlers.contains(clienthandler)) {
+            oos.writeObject("[ERROR] : Client Already exists !!");
+            return;
+        }
+        Server.clientHandlers.add(clienthandler);
+    }
+    private void handleCreateGame(String command) throws IOException {
         // Example: CREATE_GAME username
         String[] tokens = command.split(" ");
         username = tokens[1];
         if (Server.activeUsers.contains(username)) { // if there is already a username
-            out.println("[ERROR] : Username already exists."); // send a request(message) to
+             // send a request(message) to
+            oos.writeObject("[ERROR] : Username already exists.");
             return;
         }
         Server.activeUsers.add(username);
@@ -65,55 +81,58 @@ class ClientHandler extends Thread {
         game = new Game(gameToken, username, this);
         Server.activeGames.put(gameToken, game); // a Game object is added to the Server's List of Games
         Server.waitingGames.add(game); // will be waiting for other players to join
-        out.println("GAME_CREATED " + gameToken); // sends a request to Client's Input
+        oos.writeObject("GAME_CREATED " + gameToken);// sends a request to Client's Input
+        Server.clientHandlers.add(this);
     }
 
-    private void handleJoinGame(String command) {
+    private void handleJoinGame(String command) throws IOException {
         // Example: JOIN_GAME username token
         String[] tokens = command.split(" ");
         username = tokens[1];
         String token = tokens[2];
         if (Server.activeUsers.contains(username)) {
-            out.println("[ERROR] : Username already exists.");
+            oos.writeObject("[ERROR] : Username already exists.");
             return;
         }
         game = Server.activeGames.get(token);
         if (game == null || game.isFull()) {
-            out.println("[ERROR] : Game not available.");
+            oos.writeObject("[ERROR] : Game not available.");
             return;
         }
         Server.activeUsers.add(username);
         game.addPlayer(username, this);
-        out.println("JOINED_GAME " + token);
+        oos.writeObject("JOINED_GAME " + token);
+        Server.clientHandlers.add(this);
         if (game.isFull()) {
             game.notifyPlayers("[SERVER] : All players are joined. You can start the game now !");
             Server.waitingGames.remove(game);
         }
     }
 
-    private void handleJoinRandomGame(String command) {
+    private void handleJoinRandomGame(String command) throws IOException {
         // Example: JOIN_RANDOM_GAME username
         String[] tokens = command.split(" ");
         username = tokens[1];
         if (Server.activeUsers.contains(username)) {
-            out.println("[ERROR] : Username already exists.");
+            oos.writeObject("[ERROR] : Username already exists.");
             return;
         }
         if (Server.waitingGames.isEmpty()) {
-            out.println("[ERROR] : No available games.");
+            oos.writeObject("[ERROR] : No available games.");
             return;
         }
         game = Server.waitingGames.get(0); //gets the first game from the waiting games list
         Server.activeUsers.add(username);
         game.addPlayer(username, this);
-        out.println("JOINED_GAME " + game.getToken());
+        oos.writeObject("JOINED_GAME " + game.getToken());
+        Server.clientHandlers.add(this); // adds the ClientHandler to the Server's list of ClientHandlers
         if (game.isFull()) {
             game.notifyPlayers("[SERVER] : All players are joined."); // sends a message to all players of the game
             Server.waitingGames.remove(game); // it gets removed from the list of waiting games because it's full
         }
     }
 
-    private void handleStartGame(String command) {
+    private void handleStartGame(String command) throws IOException {
         // Example: START_GAME token
         String[] tokens = command.split(" ");
         String token = tokens[1];
@@ -121,11 +140,13 @@ class ClientHandler extends Thread {
         if (game != null && game.isCreator(username) && game.isFull()) { // if the game exists and the username of the one that sent the request is the same as Creator and the game is Filled
             game.startGame(); // starts the game
             game.notifyPlayers("[SERVER] : !!! Game Started by " + username + " !!!");
-
+            sendObject("DISABLE_START_BUTTON");
         } else if (!game.isFull()) {
-            out.println("[ERROR] : Game is not full. Cannot Start the Game . Waiting for Players ..."); // sends a message to Client
+
+            oos.writeObject("[ERROR] : Game is not full. Cannot Start the Game . Waiting for Players ...");// sends a message to Client
         } else {
-            out.println("[ERROR] : You are not the game creator or game not found.");
+
+            oos.writeObject("[ERROR] : You are not the game creator or game not found.");
         }
     }
 
@@ -149,21 +170,31 @@ class ClientHandler extends Thread {
 
         return sb.toString();
     }
-
-    public void sendMessage(String message) {
-        out.println(message); // sends a message to MainFrame
+    public boolean getIsHakem() {
+        return this.isHakem;
+    }
+    public void setHakem(boolean bool) {
+        this.isHakem = bool;
+    }
+    public void setCards(ArrayList<Cards> cards) {
+        this.playercards = cards;
+    }
+    public ArrayList<Cards> getCards() {
+        return this.playercards;
+    }
+    public void setMainFrame(MainFrame mainframe) {
+        this.mainframe = mainframe;
+    }
+    public MainFrame getMainFrame() {
+        return this.mainframe;
+    }
+    public void sendObject(Object object) throws IOException {
+        oos.writeObject(object);// sends an object to MainFrame
     }
 
-    public static void addClient(String username, MainFrame mainFrame) {
-        ClientHandler.clients.put(username, mainFrame);
+    void sendCards(ArrayList<Cards> cards) throws IOException {
+        oos.writeObject(cards);
     }
 
-    public static MainFrame getClient(String username) {
-        return ClientHandler.clients.get(username);
-    }
-
-    public static void removeClient(String username) {
-        clients.remove(username);
-    }
 
 }

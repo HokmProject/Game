@@ -1,5 +1,6 @@
 import javax.swing.*;
 import java.awt.*;
+import java.io.IOException;
 
 public class MainMenu extends JFrame {
     private Client client;
@@ -16,7 +17,13 @@ public class MainMenu extends JFrame {
         JButton createGameButton = new JButton("Create a Game");
         JButton joinGameButton = new JButton("Join a Game");
 
-        createGameButton.addActionListener(e -> client.showCreateGameDialog()); // the Method of sending a Create
+        createGameButton.addActionListener(e -> {
+            try {
+                client.showCreateGameDialog();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }); // the Method of sending a Create
                                                                                 //request from client is called
         joinGameButton.addActionListener(e -> client.showJoinGameDialog()); // for joining a Game
 

@@ -2,14 +2,16 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
+import java.util.ArrayList;
 
-public class MainFrame extends JFrame {
+public class MainFrame extends JFrame implements Serializable {
     private String username;
     private String token;
     private boolean isCreator;
-    private BufferedReader in;
 
-    private Cards[] PlayerCards;
+    private ArrayList<Cards> PlayerCards;
     private JFrame MainFrameScore;
     private JFrame CardsInterfaceFrame;
 
@@ -19,13 +21,13 @@ public class MainFrame extends JFrame {
     //    static ImageIcon c1Image, c2Image, c3Image, c4Image , c5Image, c6Image, c7Image, c8Image , c9Image, c10Image, c11Image, c12Image , c13Image;
     static ImageIcon ImgIcons;
     static JButton[] buttons;
+    static JButton startButton;
     //___________________________________________________________________________________________
 
-    public MainFrame(String username, String token, boolean isCreator, BufferedReader in) {
+    public MainFrame(String username, String token, boolean isCreator, ObjectInputStream ois) {
         this.username = username;
         this.token = token;
         this.isCreator = isCreator;
-        this.in = in;
         setTitle("Hokm Game - " + username);
         setLayout(new BorderLayout());
 
@@ -135,7 +137,11 @@ public class MainFrame extends JFrame {
         if (isCreator) { // if it's Creator , then the start button will be shown for him
             JButton startButton = new JButton("Start Game");
             startButton.addActionListener(e -> {
-                Client.sendMessage("START_GAME " + token); // sends a request to the ClientHandler
+                try {
+                    Client.sendMessage("START_GAME " + token); // sends a request to the ClientHandler
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             });
             add(startButton, BorderLayout.SOUTH);
         }
@@ -145,18 +151,46 @@ public class MainFrame extends JFrame {
         // Listen for server messages
         new Thread(() -> {
             try {
-                String response;
-                while ((response = in.readLine()) != null) {
-                    messageArea.append(response + "\n"); // this is where the messages are shown
-                    if (response.equals("Game Started")) {
-                        // Handle game start logic here
+                Object object;
+                while ((true)){
+                    object = ois.readObject();
+                    if(object instanceof String) {
+                        String response = (String) object;
+                        messageArea.append(response + "\n");
+                        if (response.equals("Game Started")) {
+                            // Handle game start logic here
 
-                    } else if (response.equals("All players are joined.")) {
-                        // Handle all players joined logic here
+                        } else if (response.equals("[SERVER] : All players are joined.")) {
+                            // Handle all players joined logic here
+                            if (isCreator) {
+                                messageArea.append("[CREATOR] : You can Start Now !!!");
+                            }
+                        }else if (response.equals("DISABLE_START_BUTTON")){
+                            startButton.setEnabled(false);
+                        }
+//                        }else if (response.startsWith("SENDING_CARDS_PATH ")){
+//                            String[] command = response.split(" ");
+//                            String Path = command[1];
+//                            String[] cardPath = Path.split("_");
+//                            for(int i = 0 ; i < cardPath.length ; i++){
+//                                ImageIcon imgpath = new ImageIcon(cardPath[i]);
+//                                buttons[i].setIcon(imgpath);
+//                            }
+                            // Handle sending cards logic here
+                    // this is where the messages are shown
+                        }else if(object instanceof ArrayList){
+                            PlayerCards = (ArrayList<Cards>) object;
+                            for (int i = 0; i < PlayerCards.size() ; i++) {
+                            String ImgPath = PlayerCards.get(i).getImgPath();
+                            ImageIcon image = new ImageIcon(ImgPath);
+                            buttons[i].setIcon(image);
+                            }
+                        }
                     }
-                }
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
         }).start();
 

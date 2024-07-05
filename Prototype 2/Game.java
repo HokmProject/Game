@@ -1,9 +1,11 @@
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class Game {
+class Game implements Serializable {
     private String token;
     private String creator;
     private List<String> players = new ArrayList<>();
@@ -43,13 +45,13 @@ class Game {
     public void startGame() {
         if (players.size() == 2) {
             started = true;
-            new Deal(clients);
+            new Deal(playerHandlers , clients);
         }
     }
 
-    public void notifyPlayers(String message) {
+    public void notifyPlayers(String message) throws IOException {
         for (ClientHandler handler : playerHandlers.values()) {
-            handler.sendMessage(message);
+            handler.sendObject(message);
         }
     }
 

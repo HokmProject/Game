@@ -2,14 +2,15 @@ import javax.swing.*;
 import java.awt.*;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 
 public class JoinFrame extends JFrame {
     private Client client;
-    private BufferedReader in;
+    private ObjectInputStream ois;
 
-    public JoinFrame(Client client, BufferedReader in) {
+    public JoinFrame(Client client, ObjectInputStream ois) {
         this.client = client;
-        this.in = in;
+        this.ois = ois;
 
         setTitle("Join a Game");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -25,14 +26,22 @@ public class JoinFrame extends JFrame {
             String token = tokenField.getText();
             String username = usernameField.getText();
             if (!token.isEmpty() && !username.isEmpty()) {
-                client.sendJoinGameRequest(username, token);
+                try {
+                    client.sendJoinGameRequest(username, token);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
 
         joinRandomButton.addActionListener(e -> {
             String username = usernameField.getText();
             if (!username.isEmpty()) {
-                client.sendJoinRandomGameRequest(username);
+                try {
+                    client.sendJoinRandomGameRequest(username);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
 
