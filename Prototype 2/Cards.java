@@ -64,9 +64,15 @@ public class Cards implements Serializable {
             new Cards("KH", "8", 7, "8K" , "deck/8K.gif"),
             new Cards("KH", "9", 8, "9K" , "deck/9K.gif"),
             new Cards("KH", "10", 9, "10K" , "deck/10K.gif"),
+<<<<<<< HEAD
             new Cards("KH", "J", 10, "JK" , "deck/JK.gif"),
             new Cards("KH", "Q", 11, "QK" , "deck/QK.gif"),
             new Cards("KH", "K", 12, "KK" , "deck/KK.gif"),
+=======
+            new Cards("KH", "J", 10, "JK" , "deck/10J.gif"),
+            new Cards("KH", "Q", 11, "QK" , "deck/11K.gif"),
+            new Cards("KH", "K", 12, "KK" , "deck/13K.gif"),
+>>>>>>> c9a6905b857733f2be51996f0881bee95b8a577c
     };
 
     static Cards[] del = {
