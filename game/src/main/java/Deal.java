@@ -1,45 +1,86 @@
+import javax.swing.*;
+import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
-public class Deal {
+public class Deal implements Serializable {
     static ArrayList<Cards> allCards = new ArrayList<>();
-    public Client[] players;
+    public Map<String , ClientHandler> playerHandlers;
+    private List<Client> clients;
     public Cards[] playerCards;
 
-    public Deal(Client[] players, Cards[] c1, Cards[] c2, Cards[] c3, Cards[] c4) {
-        this.players = players;
-        startGame(players);
+    public Deal(Map<String , ClientHandler> playerHandlers , List<Client> clients) {
+        this.playerHandlers = playerHandlers;
+        this.clients = clients;
+        //pass a ClientHandler from Game
+        startGame(playerHandlers);
 
-        allCards.addAll(Arrays.asList(c1));
-        allCards.addAll(Arrays.asList(c2));
-        allCards.addAll(Arrays.asList(c3));
-        allCards.addAll(Arrays.asList(c4));
-
-        for (Client player : players) {
-            //returns a random deck of hands that is sorted for each player
-            player.setCards(sortCards(dealCards()));
-        }
+        allCards.addAll(List.of(Cards.pick));
+        allCards.addAll(List.of(Cards.del));
+        allCards.addAll(List.of(Cards.geshniz));
+        allCards.addAll(List.of(Cards.khesht));
+        //Shuffle the cards later
+        //hakem should get the cards First*
+        playerHandlers.values().forEach(playerHandler -> {
+            playerHandler.setCards(sortCards(dealCards(playerHandler)));
+//            updateGUI(playerHandler.getCards().toArray(new Cards[0]))
+//                    try {
+//                        ArrayList<String> ImagePaths = new ArrayList<>();
+//                        StringBuilder ImagesString = new StringBuilder();
+//                        for (Cards card : playerHandler.getCards()) {
+//                            ImagesString.append(card.getImgPath()).append("_");
+//                            ImagePaths.add(card.getImgPath());
+//                        }
+//                        playerHandler.sendObject("SENDING_CARDS_PATH " + ImagesString);
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
+                    try {
+                        playerHandler.sendCards(playerHandler.getCards());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    ;}
+        );
     }
 
     // setting a random hakem from the players
-    public void startGame(Client[] users) {
+    public void startGame(Map<String , ClientHandler> playerHandlers) { // The logic will be changed later (Cards showing up)
         Random rand = new Random();
-        int randNumber = rand.nextInt(0, 4);
-        users[randNumber].setHakem(true);
+        int randNumber = rand.nextInt(0, 2);
+//        playerHandlers.get(randNumber).setHakem(true);
+        List<ClientHandler> valuesList = new ArrayList<>(playerHandlers.values());
+        valuesList.get(randNumber).setHakem(true);
     }
 
     //dealing the random cards to each player
-    private Cards[] dealCards() {
+    public Cards[] dealCards(ClientHandler player) {
         playerCards = new Cards[13];
         Random rand = new Random();
         for (int i = 0; i < 13; i++) {
             int randNum = rand.nextInt(0, allCards.size());
             playerCards[i] = allCards.get(randNum);
             allCards.remove(randNum);
+            if(i == 5 && player.getIsHakem()){
+                chooseHokm(playerCards);
+            }
         }
+        //this happens after assigning cards to each player
         return playerCards;
     }
+
+//    public void updateGUI(Cards[] playerCards , ClientHandler playerHandler) {
+//        MainFrame mainframe = playerHandler.getMainFrame().get(0);
+//        JButton buttons[] = mainframe.getButtons();// * Error : return a null mainframe
+//        for (int i = 0; i < playerCards.length ; i++) {
+//            String ImgPath = playerCards[i].getImgPath();
+//            ImageIcon image = new ImageIcon(ImgPath);
+//            buttons[i].setIcon(image);
+//        }
+//    }
 
     //sorting the cards by suit and value
     private ArrayList<Cards> sortCards(Cards[] c) {
@@ -64,7 +105,7 @@ public class Deal {
         sort.addAll(sortByNum(KH));
         sort.addAll(sortByNum(G));
         sort.addAll(sortByNum(D));
-
+        // updateGUI here?
         return sort;
     }
 
@@ -87,9 +128,9 @@ public class Deal {
     }
 
     public void chooseHokm(Cards[] c) {
-        for (Client x : players) {
-            if (x.getIsHakem()) {
-
+        for (ClientHandler playerHandler : playerHandlers.values()) {
+            if (playerHandler.getIsHakem()) {
+                new HokmFrame(c , playerHandler);
             }
         }
     }

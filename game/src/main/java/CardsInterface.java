@@ -1,22 +1,18 @@
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
 
 public class CardsInterface {
 
-
     static String c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13;
+//    static ImageIcon c1Image, c2Image, c3Image, c4Image , c5Image, c6Image, c7Image, c8Image , c9Image, c10Image, c11Image, c12Image , c13Image;
+    static ImageIcon ImgIcons;
     static JButton[] buttons;
-    static void cards(JFrame frame) {
+    static JFrame cards(JFrame frame) {
 
         c1 = c2 = c3 = c4 = c5= c6 = c7 = c8 = c9 = c10 = c11 = c12 = c13 = "";
 
-//        ImageIcon icon = new ImageIcon("deck/Club-2.gif");
-//        ImageIcon icon1 = new ImageIcon("deck/Club-3.gif");
-//        ImageIcon icon2 = new ImageIcon("deck/Club-4.gif");
 
         JButton b1 = new JButton(c1);
         JButton b2 = new JButton(c2);
@@ -47,12 +43,16 @@ public class CardsInterface {
         b12.setBounds(681, 520, 84, 125);
         b13.setBounds(742, 520, 84, 125);
 
+//        ImageIcon[] ImgIcons = {c1Image, c2Image, c3Image, c4Image , c5Image, c6Image, c7Image, c8Image , c9Image, c10Image, c11Image, c12Image , c13Image};
         JButton[] buttons = {b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13};
 
 
-//        b1.setIcon(icon);
-//        b2.setIcon(icon1);
-//        b3.setIcon(icon2);
+//        b1.setIcon(c1Image); b2.setIcon(c2Image); b3.setIcon(c3Image);
+//        b4.setIcon(c4Image);b5.setIcon(c5Image);b6.setIcon(c6Image);
+//        b7.setIcon(c7Image);b8.setIcon(c8Image);b9.setIcon(c9Image);
+//        b10.setIcon(c10Image);b11.setIcon(c11Image);b12.setIcon(c12Image);
+//        b13.setIcon(c13Image);
+
 
         frame.add(b1);frame.add(b2);frame.add(b3);
         frame.add(b4);frame.add(b5);frame.add(b6);
@@ -67,15 +67,20 @@ public class CardsInterface {
         buttonActionListener(b13);
 
 
+        return frame;
     }
 
-    static private void buttonActionListener(JButton b) {
+    static void buttonActionListener(JButton b) {
         b.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 b.setEnabled(false);
             }
         });
+    }
+
+    public JFrame getcard(){
+        return this.getcard();
     }
 
 }

@@ -1,80 +1,137 @@
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
-import java.net.Socket;
+import com.sun.tools.javac.Main;
 
+import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-public class Client {
-    private String username;
+public class Client implements Serializable{
+    private static final String SERVER_ADDRESS = "localhost";
+    private static final int SERVER_PORT = 12345;
     private Socket socket;
-    private PrintWriter out;
-    private BufferedReader in;
+    private ObjectInputStream ois;
+    private static ObjectOutputStream oos;
+    private JFrame mainMenuFrame;
 
+    private JFrame mainFrame;
+    private JFrame joinFrame;
     private boolean isHakem;
-    private String partner;
-    private ArrayList<Cards> cards;
 
-    public Client(String username, Socket socket) throws IOException {
+    private String username;
+    private ArrayList<Cards> playercards;
+
+    private List<MainFrame> mainFrameList;
+    public Client() {}
+
+    public Client(String username) {
+        playercards = new ArrayList<>();
+        isHakem = false;
         this.username = username;
-        this.socket = socket;
-        this.out = new PrintWriter(socket.getOutputStream(), true);
-        this.in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        this.isHakem = false;
+        this.mainFrameList = new ArrayList<>();
     }
 
-    // public void notifyGameStarted() {
-    // // Update GUI to show the start button for the client who created the game
-    // if (this == game.getPlayers().get(0)) {
-    // Platform.runLater(() -> {
-    // // Show start button in the GUI
-    // });
-    // }
-    //
-    // // Update GUI to display the shuffled cards for all players
-    // Platform.runLater(() -> {
-    // // Update GUI to display the shuffled cards
-    // });
-    // }
-    public String getUsername() {
-        return username;
+    public static void main(String[] args) {
+        SwingUtilities.invokeLater(() -> new Client().createAndShowGUI());
     }
 
-    // public void sendGameState(HokmGame game) {
-    // // Serialize game state and send to client
-    // out.println("GAME_STATE " + serializeGameState(game));
-    // }
+    public void createAndShowGUI() {
+        mainMenuFrame = new MainMenu(this);
+        connectToServer();
+    }
 
-    // public void sendRoundResult(Client roundWinner) {
-    // out.println("ROUND_RESULT " + roundWinner.getUsername());
-    // }
+    private void connectToServer() {
+        try {
+            socket = new Socket(SERVER_ADDRESS, SERVER_PORT);
+            oos = new ObjectOutputStream(socket.getOutputStream());
+            ois = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
-    // private String serializeGameState(HokmGame game) {
-    // // Convert the game state to a string format
-    // return ""; // Implement actual serialization logic
-    // }
-
-    public void handleServerMessages() {
-        // Listen to server messages and update UI accordingly
-        new Thread(() -> {
+    public MainFrame showCreateGameDialog() throws IOException {
+        String username = JOptionPane.showInputDialog("Enter username:"); // a dialog JOptionPane opens for input
+        this.username = username;
+        if (username != null && !username.isEmpty()) {
+            sendMessage("CREATE_GAME " + username); // sends the request
             try {
-                String message;
-                while ((message = in.readLine()) != null) {
-                    if (message.startsWith("GAME_STATE ")) {
-                        // Update the client UI with the new game state
-                        // this is where we write the game state in the text filed of mainFrame
-                    } else if (message.startsWith("ROUND_RESULT ")) {
-                        // Update the client UI with the round result
-                        // this is where we update the result in Score class
-                    }
+                Object response = ois.readObject();
+                if (response instanceof String & ((String) response).startsWith("GAME_CREATED")) {
+                    String token = ((String) response).split(" ")[1];
+                    JOptionPane.showMessageDialog(null, "Game created with token: " + token);
+                    mainMenuFrame.dispose();  // Closes the main menu
+//                    setMainFrame(new MainFrame(username , token , true , in));
+                    sendMessage(new MainFrame(username , token , true , ois));
+//                    sendMessage(this);
+//                    addClientMainFrame(username , mainFrame);
+                    JOptionPane.showMessageDialog(null, response);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
             }
-        }).start();
+        }
+        return null;
+    }
+
+    public void showJoinGameDialog() {
+        joinFrame = new JoinFrame(this, ois);
+    }
+
+    public MainFrame sendJoinGameRequest(String username, String token) throws IOException {
+        sendMessage("JOIN_GAME " + username + " " + token);
+        this.username = username;
+        try {
+            Object response = ois.readObject();
+            if (response instanceof String && ((String) response).startsWith("JOINED_GAME")) {
+                JOptionPane.showMessageDialog(null, "Joined game with token: " + token);
+                joinFrame.dispose(); // Close join menu
+                mainMenuFrame.dispose(); // Close main menu
+//                setMainFrame(new MainFrame(username , token , false , in));
+                sendMessage(new MainFrame(username , token , false , ois));
+//                sendMessage(this);
+//                addClientMainFrame(username , mainFrame);
+            } else {
+                JOptionPane.showMessageDialog(null, response);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public MainFrame sendJoinRandomGameRequest(String username) throws IOException {
+        sendMessage("JOIN_RANDOM_GAME " + username);
+        this.username = username;
+        try {
+            Object response = ois.readObject();
+            if (response instanceof String && ((String) response).startsWith("JOINED_GAME")) {
+                String token = ((String) response).split(" ")[1];
+                JOptionPane.showMessageDialog(null, "Joined random game with token: " + token);
+                joinFrame.dispose(); // Close join menu
+                mainMenuFrame.dispose(); // Close main menu
+//                setMainFrame(new MainFrame(username , token , false , in));
+//                addClientMainFrame(username , mainFrame);
+                sendMessage(new MainFrame(username , token , false , ois));
+//                sendMessage(this);
+            } else {
+                JOptionPane.showMessageDialog(null, response);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        return null;
+    }
+
+    public static void sendMessage(Object object) throws IOException {
+        oos.writeObject(object);// this is where the requests go to ClientHandler's BufferedReader
     }
 
     public boolean getIsHakem() {
@@ -82,7 +139,7 @@ public class Client {
     }
 
     public ArrayList<Cards> getCards() {
-        return this.cards;
+        return this.playercards;
     }
 
     public void setHakem(boolean bool) {
@@ -90,7 +147,34 @@ public class Client {
     }
 
     public void setCards(ArrayList<Cards> cards) {
-        this.cards = cards;
+        this.playercards = cards;
     }
+
+
+    public String getUsername() {
+        return username;
+    }
+
+    public List<MainFrame> getMainFrame() {
+        return mainFrameList;
+    }
+
+
+//    public void addClientMainFrame(String username, JFrame mainFrame) {
+//        clientMainFrame.put(username, (MainFrame) mainFrame);
+//    }
+//
+//    public MainFrame getClientMainFrame(String username) {
+//        return clientMainFrame.get(username);
+//    }
+//
+//    public void removeClient(String username) {
+//        clientMainFrame.remove(username);
+//    }
+
+    public void setMainFrame(MainFrame mainFrame) {
+        this.mainFrame = mainFrame;
+    }
+
 
 }

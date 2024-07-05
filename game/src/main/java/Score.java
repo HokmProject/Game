@@ -5,7 +5,7 @@ import java.awt.*;
 public class Score {
 
     static String points, points2, rounds, rounds2;
-    static void score(JFrame frame) {
+    static JFrame score(JFrame frame) {
         points = points2 = rounds2 = rounds = "0";
         JLabel team1score= new JLabel("team 1: "+points+"                                               rounds: "+rounds);
         team1score.setBounds(10, 620, 400, 40);
@@ -21,6 +21,7 @@ public class Score {
 //        ID.setBounds(450, 610, 300, 70);
 //        ID.setFont(new Font("Arial", Font.BOLD, 30));
 //        frame.add(ID);
+        return frame;
     }
 
 }

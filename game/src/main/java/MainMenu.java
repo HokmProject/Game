@@ -1,45 +1,37 @@
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.*;
+import java.io.IOException;
 
 public class MainMenu extends JFrame {
-    private JButton createGameButton;
-    private JButton joinGameButton;
+    private Client client;
 
-    public MainMenu() {
-        setTitle("Hokm Game");
-        setSize(300, 220);
+    public MainMenu(Client client) {
+        this.client = client;
+
+        setTitle("Hokm Game - Main Menu");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setLayout(null);
+        setSize(400, 300);
+        setLayout(new BorderLayout());
 
-        createGameButton = new JButton("Create Game");
-        joinGameButton = new JButton("Join Game");
+        JPanel menuPanel = new JPanel();
+        JButton createGameButton = new JButton("Create a Game");
+        JButton joinGameButton = new JButton("Join a Game");
 
-        createGameButton.setBounds(50, 50, 200, 50);
-        joinGameButton.setBounds(50, 110, 200, 50);
-
-        add(createGameButton);
-        add(joinGameButton);
-
-        createGameButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new CreateGameFrame().setVisible(true);
-                dispose();
+        createGameButton.addActionListener(e -> {
+            try {
+                client.showCreateGameDialog();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
             }
-        });
+        }); // the Method of sending a Create
+                                                                                //request from client is called
+        joinGameButton.addActionListener(e -> client.showJoinGameDialog()); // for joining a Game
 
-        joinGameButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                new JoinGameUsernameFrame().setVisible(true);
-                dispose();
-            }
-        });
-    }
+        menuPanel.add(createGameButton);
+        menuPanel.add(joinGameButton);
+        add(menuPanel, BorderLayout.CENTER);
 
-    public static void main(String[] args) {
-        new MainMenu().setVisible(true);
+        setVisible(true);
     }
 }
+
