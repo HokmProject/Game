@@ -12,7 +12,7 @@ public class HokmFrame extends JFrame {
     private JButton delButton;
 
     public HokmFrame(Cards[] cards , ClientHandler clientHandler) {
-        setTitle("Image Display Frame");
+        setTitle("Choose Hokm : "+ clientHandler.getUsername());
         setSize(600, 400); // Adjust size as needed
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -49,7 +49,7 @@ public class HokmFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     clientHandler.getGame().setHokm("P");
-                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem --> PICK");
+                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem #"+ clientHandler.getUsername() +  "#  --> PICK");
                     JOptionPane.showMessageDialog(null , "Hokm is #PICK#");
                     dispose();
                 } catch (IOException ex) {
@@ -62,7 +62,7 @@ public class HokmFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     clientHandler.getGame().setHokm("KH");
-                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem --> KHESHT");
+                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem #"+ clientHandler.getUsername() +  "#  --> KHESHT");
                     JOptionPane.showMessageDialog(null , "Hokm is #KHESHT#");
                     dispose();
                 } catch (IOException ex) {
@@ -75,7 +75,7 @@ public class HokmFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     clientHandler.getGame().setHokm("G");
-                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem --> GESHNIZ");
+                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem #"+ clientHandler.getUsername() +  "#  --> GESHNIZ");
                     JOptionPane.showMessageDialog(null , "Hokm is #GESHNIZ#");
                     dispose();
                 } catch (IOException ex) {
@@ -88,7 +88,7 @@ public class HokmFrame extends JFrame {
             public void actionPerformed(ActionEvent e) {
                 try {
                     clientHandler.getGame().setHokm("D");
-                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem --> DEL");
+                    clientHandler.getGame().notifyPlayers("[HAKEM] : Hokm is Chosen by Hakem #"+ clientHandler.getUsername() +  "#  --> DEL");
                     JOptionPane.showMessageDialog(null , "Hokm is #DEL#");
                     dispose();
                 } catch (IOException ex) {

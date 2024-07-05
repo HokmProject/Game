@@ -27,17 +27,17 @@ public class Deal implements Serializable {
         playerHandlers.values().forEach(playerHandler -> {
             playerHandler.setCards(sortCards(dealCards(playerHandler)));
 //            updateGUI(playerHandler.getCards().toArray(new Cards[0]))
-                    try {
-                        ArrayList<String> ImagePaths = new ArrayList<>();
-                        StringBuilder ImagesString = new StringBuilder();
-                        for (Cards card : playerHandler.getCards()) {
-                            ImagesString.append(card.getImgPath()).append("_");
-                            ImagePaths.add(card.getImgPath());
-                        }
-                        playerHandler.sendObject("SENDING_CARDS_PATH " + ImagesString);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
+//                    try {
+//                        ArrayList<String> ImagePaths = new ArrayList<>();
+//                        StringBuilder ImagesString = new StringBuilder();
+//                        for (Cards card : playerHandler.getCards()) {
+//                            ImagesString.append(card.getImgPath()).append("_");
+//                            ImagePaths.add(card.getImgPath());
+//                        }
+//                        playerHandler.sendObject("SENDING_CARDS_PATH " + ImagesString);
+//                    } catch (IOException e) {
+//                        throw new RuntimeException(e);
+//                    }
                     try {
                         playerHandler.sendCards(playerHandler.getCards());
                     } catch (IOException e) {

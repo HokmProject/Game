@@ -1,11 +1,6 @@
-import javax.swing.*;
 import java.io.*;
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.lang.System.out;
 
 class ClientHandler extends Thread implements Serializable {
     private Socket socket;
@@ -198,5 +193,7 @@ class ClientHandler extends Thread implements Serializable {
     Game getGame() throws IOException {
         return this.game;
     }
-
+    public String getUsername(){
+        return this.username;
+    }
 }

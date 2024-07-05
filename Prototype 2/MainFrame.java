@@ -138,7 +138,8 @@ public class MainFrame extends JFrame implements Serializable {
             JButton startButton = new JButton("Start Game");
             startButton.addActionListener(e -> {
                 try {
-                    Client.sendMessage("START_GAME " + token); // sends a request to the ClientHandler
+                    Client.sendMessage("START_GAME " + token);
+                    startButton.setEnabled(false);// sends a request to the ClientHandler
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
@@ -163,7 +164,7 @@ public class MainFrame extends JFrame implements Serializable {
                         } else if (response.equals("[SERVER] : All players are joined.")) {
                             // Handle all players joined logic here
                             if (isCreator) {
-                                messageArea.append("[CREATOR] : You can Start Now !!!");
+                                messageArea.append("[CREATOR] : You can Start Now !!! \n");
                             }
                         }else if (response.equals("DISABLE_START_BUTTON")){
                             startButton.setEnabled(false);
