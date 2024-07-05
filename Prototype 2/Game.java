@@ -8,10 +8,12 @@ import java.util.Map;
 class Game implements Serializable {
     private String token;
     private String creator;
+    private String Hokm;
     private List<String> players = new ArrayList<>();
     List<Client> clients = new ArrayList<>();
     private boolean started = false;
     private Map<String, ClientHandler> playerHandlers = new HashMap<>();
+    private Map<String , ClientHandler> Teams = new HashMap<>();
 
     public Game(String token, String creator, ClientHandler creatorHandler) {
         this.token = token;
@@ -35,7 +37,7 @@ class Game implements Serializable {
     }
 
     public boolean isFull() {
-        return players.size() == 2;
+        return players.size() == 4;
     }
 
     public boolean isCreator(String username) {
@@ -43,7 +45,7 @@ class Game implements Serializable {
     }
 
     public void startGame() {
-        if (players.size() == 2) {
+        if (players.size() == 4) {
             started = true;
             new Deal(playerHandlers , clients);
         }
@@ -57,6 +59,9 @@ class Game implements Serializable {
 
     public String getToken() {
         return token;
+    }
+    public void setHokm(String Hokm) {
+        this.Hokm = Hokm;
     }
 }
 

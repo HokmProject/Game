@@ -64,6 +64,9 @@ public class Deal implements Serializable {
             int randNum = rand.nextInt(0, allCards.size());
             playerCards[i] = allCards.get(randNum);
             allCards.remove(randNum);
+            if(i == 5 && player.getIsHakem()){
+                chooseHokm(playerCards);
+            }
         }
         //this happens after assigning cards to each player
         return playerCards;
@@ -127,7 +130,7 @@ public class Deal implements Serializable {
     public void chooseHokm(Cards[] c) {
         for (ClientHandler playerHandler : playerHandlers.values()) {
             if (playerHandler.getIsHakem()) {
-
+                new HokmFrame(c , playerHandler);
             }
         }
     }

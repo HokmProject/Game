@@ -195,6 +195,8 @@ class ClientHandler extends Thread implements Serializable {
     void sendCards(ArrayList<Cards> cards) throws IOException {
         oos.writeObject(cards);
     }
-
+    Game getGame() throws IOException {
+        return this.game;
+    }
 
 }
