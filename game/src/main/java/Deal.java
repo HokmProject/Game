@@ -76,6 +76,7 @@ public class Deal implements Serializable {
         return playerCards;
     }
 
+
 //    public void updateGUI(Cards[] playerCards , ClientHandler playerHandler) {
 //        MainFrame mainframe = playerHandler.getMainFrame().get(0);
 //        JButton buttons[] = mainframe.getButtons();// * Error : return a null mainframe
@@ -139,4 +140,5 @@ public class Deal implements Serializable {
             }
         }
     }
+
 }

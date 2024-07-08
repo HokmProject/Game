@@ -10,10 +10,13 @@ class Game implements Serializable {
     List<Client> clients = new ArrayList<>();
     private boolean started = false;
     private List<ClientHandler> playerHandlers = new ArrayList<>();
-    ClientHandler[] Team1;
-    ClientHandler[] Team2;
+    Team Team1;
+    Team Team2;
     private int Turn = 0;
-
+    private List<Cards> cardsOnTable = new ArrayList<>();
+    private static int currentPlayerIndex;
+    private String currentSuit;
+    private int Round;
     public Game(String token, String creator, ClientHandler creatorHandler) {
         this.token = token;
         this.creator = creator;
@@ -48,20 +51,8 @@ class Game implements Serializable {
             started = true;
             new Deal(playerHandlers , clients);
 
-            Team1 = new ClientHandler[2];
-
-            Team1[0] = playerHandlers.get(0);
-            Team1[1] = playerHandlers.get(2);
-
-            Team1[0].sendObject("[SERVER] : Your TeamMate is {"+ Team1[1].getUsername()+"}");
-            Team1[1].sendObject("[SERVER] : Your TeamMate is {"+ Team1[0].getUsername()+"}");
-            Team2 = new ClientHandler[2];
-
-            Team2[0] = playerHandlers.get(1);
-            Team2[1] = playerHandlers.get(3);
-
-            Team2[0].sendObject("[SERVER] : Your TeamMate is {"+ Team2[1].getUsername()+"}");
-            Team2[1].sendObject("[SERVER] : Your TeamMate is {"+ Team2[0].getUsername()+"}");
+            Team1 = new Team(playerHandlers.get(0) , playerHandlers.get(2));
+            Team2 = new Team(playerHandlers.get(1) , playerHandlers.get(3));
 
             getCreatorHandler().sendObject("DISABLE_START_BUTTON");
         }
@@ -173,6 +164,123 @@ class Game implements Serializable {
             }
         }
         return null;
+    }
+
+    public void playTurn(Cards card , ArrayList<ClientHandler> reorderPlayers) throws IOException{
+        ClientHandler currentPlayer = reorderPlayers.get(currentPlayerIndex);
+        if(getTurn() % 4 == 0){
+            //if it's the first round of the set , it sets the suit to the first card's current suit
+            cardsOnTable.add(card);
+            currentSuit = card.getSuit();
+            currentPlayer.sendObject("REMOVE_LAST_CARD");
+            incrementTurn();
+            notifyPlayers("[GAME] : " + currentPlayer.getUsername() + " played : " + card.getName());
+            if(currentPlayerIndex == 3){
+                reorderPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            }else{
+                reorderPlayers.get(currentPlayerIndex + 1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            }
+        }
+        else{
+            if(currentSuit.equals((card.getSuit()))){
+                cardsOnTable.add(card);
+                currentPlayer.sendObject("REMOVE_LAST_CARD");
+                incrementTurn();
+                notifyPlayers("[GAME] : " + currentPlayer.getUsername() + " played : " + card.getName());
+                if(currentPlayerIndex == 3){
+                    reorderPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                }else{
+                    reorderPlayers.get(currentPlayerIndex + 1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                }
+            }
+            //if the player plays a card that is not equal to the current suit
+            if (!currentSuit.equals(card.getSuit())) {
+                //Checks whether the player has any cards from the current suit or not
+                if(currentPlayer.isSuitAvailable(currentSuit) == true){
+                    currentPlayer.sendObject("[ERROR] : Play the Card with the Current Suit of this Set !!!");
+                    currentPlayer.sendObject("ENABLE_CARD_BUTTON " + currentPlayer.getUsername());
+                }
+                if(currentPlayer.isSuitAvailable(currentSuit) == false){
+                    if(card.getSuit().equals(Hokm)){
+                        cardsOnTable.add(card);
+                        notifyPlayers("[GAME] : "+currentPlayer.getUsername()+" has cut with " + card.getName());
+                        currentPlayer.sendObject("REMOVE_LAST_CARD");
+                        incrementTurn();
+                        notifyPlayers("[GAME] : " + currentPlayer.getUsername() + " played : " + card.getName());
+                        if(currentPlayerIndex == 3){
+                            reorderPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                        }else{
+                            reorderPlayers.get(currentPlayerIndex + 1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                        }
+                    }
+                    else{
+                        //adds a card that is not Hokm and current suit (Worthless)
+                        cardsOnTable.add(card);
+                        currentPlayer.sendObject("REMOVE_LAST_CARD");
+                        incrementTurn();
+                        notifyPlayers("[GAME] : " + currentPlayer.getUsername() + " played : " + card.getName());
+                        if(currentPlayerIndex == 3){
+                            reorderPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                        }else{
+                            reorderPlayers.get(currentPlayerIndex + 1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+                        }
+                    }
+                }
+            }
+        }
+
+//        currentPlayerIndex = (currentPlayerIndex + 1) % reorderPlayers.size();
+
+        if (cardsOnTable.size() == reorderPlayers.size()) {
+            if(currentPlayerIndex == 3){
+                reorderPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            }else{
+                reorderPlayers.get(currentPlayerIndex + 1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            }
+            evaluateHand(reorderPlayers);
+            cardsOnTable.clear();
+        }
+    }
+
+
+    public void evaluateHand(ArrayList<ClientHandler> reorderPlayers) throws IOException {
+        Cards winningCard = cardsOnTable.get(0);
+        ClientHandler winningPlayer = reorderPlayers.get(0);
+
+        for (int i = 1; i < cardsOnTable.size(); i++) {
+            Cards card = cardsOnTable.get(i);
+            if (card.getSuit().equals(winningCard.getSuit()) && card.getValue() > winningCard.getValue()) {
+                winningCard = card;
+                winningPlayer = reorderPlayers.get(i);
+            } else if (card.getSuit().equals(Hokm) && !winningCard.getSuit().equals(Hokm)) {
+                winningCard = card;
+                winningPlayer = reorderPlayers.get(i);
+            }
+        }
+
+        // The winning player starts the next hand
+        currentPlayerIndex = reorderPlayers.indexOf(winningPlayer);
+        if(Round == 7){
+            //Handle the end of the Game
+        }
+        upadateTeamScore(winningPlayer);
+        // Handle scoring logic here
+    }
+
+    private void upadateTeamScore(ClientHandler winningPlayer) throws IOException {
+        Team team = winningPlayer.getTeam(winningPlayer);
+        Team losingTeam = null;
+        for(ClientHandler player : playerHandlers){
+            if(player.getTeam(player) != team){
+                losingTeam = player.getTeam(player);
+                break;
+            }
+        }
+        team.updateScore(losingTeam);
+    }
+
+    public static void setCurrentPlayerIndex(int index) throws IOException {
+        currentPlayerIndex = index;
     }
 }
 

@@ -155,23 +155,25 @@ class ClientHandler extends Thread implements Serializable {
             System.out.println(i+1 +" : " + reorderedPlayers.get(i).getUsername() + " " + reorderedPlayers.get(i).isHakem);
         }
         if(game.getTurn() == 0 && game.getHakem() == username){
-            game.notifyPlayers(username + " played : " + card.getName());
-            reorderedPlayers.get(1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
-            game.incrementTurn();
-        } else if (game.getTurn() == 1 && reorderedPlayers.get(1).getUsername() == username) {
-            game.notifyPlayers(username + " played : " + card.getName());
-            reorderedPlayers.get(2).sendObject("[SERVER] : It's your turn. pick a Card to play.");
-            game.incrementTurn();
-        } else if (game.getTurn() == 2 && reorderedPlayers.get(2).getUsername() == username) {
-            game.notifyPlayers(username + " played : " + card.getName());
-            reorderedPlayers.get(3).sendObject("[SERVER] : It's your turn. pick a Card to play.");
-            game.incrementTurn();
-        }else if(game.getTurn() == 3 && reorderedPlayers.get(3).getUsername() == username) {
-            game.notifyPlayers(username + " played : " + card.getName());
-            reorderedPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
-            game.incrementTurn();
+            game.setCurrentPlayerIndex(0);
+            game.playTurn(card , reorderedPlayers);
         }
-//        if(game.getTurn() == 1 )
+        else if (game.getTurn() % 4 == 1 && reorderedPlayers.get(1).getUsername() == username) {
+            game.setCurrentPlayerIndex(1);
+            game.playTurn(card , reorderedPlayers);
+        }
+        else if (game.getTurn() % 4 == 2 && reorderedPlayers.get(2).getUsername() == username) {
+            game.setCurrentPlayerIndex(2);
+            game.playTurn(card , reorderedPlayers);
+        }
+        else if(game.getTurn() % 4 == 3 && reorderedPlayers.get(3).getUsername() == username) {
+            game.setCurrentPlayerIndex(3);
+            game.playTurn(card , reorderedPlayers);
+        }
+        else if(game.getTurn() % 4 == 0 && reorderedPlayers.get(0).getUsername() == username) {
+            game.setCurrentPlayerIndex(0);
+            game.playTurn(card , reorderedPlayers);
+        }
 //        else if(game.getTurn() == 1)
         else {
             oos.writeObject("[ERROR] : Wait for Your Turn ...");
@@ -231,16 +233,12 @@ class ClientHandler extends Thread implements Serializable {
         return this.username;
     }
 
-    public ClientHandler[] getTeam(ClientHandler handler){
-        for(ClientHandler player : game.Team1){
-            if(player == handler){
-                return game.Team1;
-            }
+    public Team getTeam(ClientHandler player){
+        if(game.Team1.player1 == player || game.Team1.player2 == player){
+            return game.Team1;
         }
-        for(ClientHandler player2 : game.Team2) {
-            if (player2 == handler) {
-                return game.Team2;
-            }
+        if(game.Team2.player1 == player || game.Team2.player2 == player){
+            return game.Team2;
         }
         return null;
     }
@@ -248,6 +246,15 @@ class ClientHandler extends Thread implements Serializable {
     public boolean hasHokm(String Hokm) {
         for (Cards card : playercards) {
             if (card.getSuit().equals(Hokm)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isSuitAvailable(String suit){
+        for(Cards card : playercards){
+            if(card.getSuit().equals(suit)){
                 return true;
             }
         }

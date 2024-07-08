@@ -19,14 +19,16 @@ public class MainFrame extends JFrame implements Serializable {
 
     //_____________________________________________________________________________________________
     static String c1, c2, c3, c4, c5, c6, c7, c8, c9, c10, c11, c12, c13;
-    static String points, points2, rounds, rounds2;
+    static int points, points2, rounds, rounds2;
     //    static ImageIcon c1Image, c2Image, c3Image, c4Image , c5Image, c6Image, c7Image, c8Image , c9Image, c10Image, c11Image, c12Image , c13Image;
     static ImageIcon ImgIcons;
     static JButton[] buttons;
     private JButton startButton;
     private static JButton LastClicked;
+    private Cards LastCard;
     private boolean isYourTurn;
     private boolean cardsDistributed;
+    private int LastCardIndex;
     //___________________________________________________________________________________________
 
     public MainFrame(String username, String token, boolean isCreator, ObjectInputStream ois) {
@@ -52,7 +54,7 @@ public class MainFrame extends JFrame implements Serializable {
 //__________________________________________________________________________________________________________
 
 
-        points = points2 = rounds2 = rounds = "0";
+        points = points2 = rounds2 = rounds = 0;
         JLabel team1score= new JLabel("team 1: "+points+"                                               rounds: "+rounds);
         team1score.setBounds(10, 670, 400, 40);
         team1score.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.black));
@@ -159,22 +161,46 @@ public class MainFrame extends JFrame implements Serializable {
                     object = ois.readObject();
                     if(object instanceof String) {
                         String response = (String) object;
-                        messageArea.append(response + "\n");
-                        if (response.equals("Game Started")) {
-                            // Handle game start logic here
 
-                        } else if (response.equals("[SERVER] : All players are joined.")) {
-                            // Handle all players joined logic here
-                            if (isCreator) {
-                                messageArea.append("[CREATOR] : You can Start Now !!! \n");
-                            }
-                        }else if (response.startsWith("DISABLE_START_BUTTON")){
+                        if(
+                                response.startsWith("[CREATOR]")
+                                || response.startsWith("[GAME]")
+                                || response.startsWith("[SERVER]")
+                                || response.startsWith("[ERROR]")
+                                || response.startsWith("[HAKEM]")){
+                            messageArea.append(response + "\n");
+                        }
+                        else if (response.startsWith("DISABLE_START_BUTTON")){
                             if(isCreator) {
                                 startButton.setEnabled(false);
                             }
-                        }else if (response.equals("ENABLE_CARD_BUTTON " + username)){
+                        }
+                        else if (response.equals("ENABLE_CARD_BUTTON " + username)){
                             LastClicked.setEnabled(true);
 //                            break;
+                        }
+                        else if(response.equals("REMOVE_LAST_CARD")){
+                            PlayerCards.set(LastCardIndex , null);
+                        }
+                        else if (response.startsWith("SCORE ")) {
+                            String[] command = response.split(" ");
+                            points = Integer.parseInt(command[1]);
+                            team1score.setText("team 1: "+points+"                                               rounds: "+rounds);
+                        }
+                        else if (response.startsWith("OPPONENT_SCORE ")) {
+                            String[] command = response.split(" ");
+                            points2 = Integer.parseInt(command[1]);
+                            team2score.setText("team 2: "+points2+"                                               rounds: "+rounds2);
+                        }
+                        else if (response.startsWith("ROUND ")){
+                            String[] command = response.split(" ");
+                            rounds = Integer.parseInt(command[1]);
+                            team1score.setText("team 1: "+points+"                                               rounds: "+rounds);
+                        }
+                        else if (response.startsWith("OPPONENT_ROUND ")) {
+                            String[] command = response.split(" ");
+                            rounds2 = Integer.parseInt(command[1]);
+                            team2score.setText("team 2: "+points2+"                                               rounds: "+rounds2);
                         }
 //                        }else if (response.startsWith("SENDING_CARDS_PATH ")){
 //                            String[] command = response.split(" ");
@@ -186,7 +212,8 @@ public class MainFrame extends JFrame implements Serializable {
 //                            }
                             // Handle sending cards logic here
                     // this is where the messages are shown
-                        }else if(object instanceof ArrayList){
+                        }
+                    else if(object instanceof ArrayList){
                             PlayerCards = (ArrayList<Cards>) object;
                             for (int i = 0; i < PlayerCards.size() ; i++) {
                             String ImgPath = PlayerCards.get(i).getImgPath();
@@ -216,6 +243,8 @@ public class MainFrame extends JFrame implements Serializable {
                                 public void actionPerformed(ActionEvent e) {
                                     buttons[index].setEnabled(false);
                                     LastClicked = buttons[index];
+//                                    LastCard = PlayerCards.get(index);
+                                    LastCardIndex = index;
                                     try {
                                         Client.sendMessage(PlayerCards.get(index));
                                     } catch (IOException ex) {
