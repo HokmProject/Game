@@ -3,7 +3,7 @@ import java.net.*;
 import java.util.*;
 
 public class Server implements Serializable{
-    private static final int PORT = 12345;
+    private static final int PORT = 1234;
     static Map<String, Game> activeGames = new HashMap<>(); // A Hashmap with key of Token and Game object value
     static Set<String> activeUsers = new HashSet<>(); // A Set with values of usernames , so there won't be duplicates
     static List<Game> waitingGames = new ArrayList<>(); // A List of Game objects that are waiting for players to join

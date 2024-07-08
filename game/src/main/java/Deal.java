@@ -8,11 +8,11 @@ import java.util.Random;
 
 public class Deal implements Serializable {
     static ArrayList<Cards> allCards = new ArrayList<>();
-    public Map<String , ClientHandler> playerHandlers;
+    public List<ClientHandler> playerHandlers;
     private List<Client> clients;
     public Cards[] playerCards;
 
-    public Deal(Map<String , ClientHandler> playerHandlers , List<Client> clients) {
+    public Deal(List<ClientHandler> playerHandlers , List<Client> clients) {
         this.playerHandlers = playerHandlers;
         this.clients = clients;
         //pass a ClientHandler from Game
@@ -24,8 +24,12 @@ public class Deal implements Serializable {
         allCards.addAll(List.of(Cards.khesht));
         //Shuffle the cards later
         //hakem should get the cards First*
-        playerHandlers.values().forEach(playerHandler -> {
-            playerHandler.setCards(sortCards(dealCards(playerHandler)));
+        playerHandlers.forEach(playerHandler -> {
+                    try {
+                        playerHandler.setCards(sortCards(dealCards(playerHandler)));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
 //            updateGUI(playerHandler.getCards().toArray(new Cards[0]))
 //                    try {
 //                        ArrayList<String> ImagePaths = new ArrayList<>();
@@ -48,19 +52,19 @@ public class Deal implements Serializable {
     }
 
     // setting a random hakem from the players
-    public void startGame(Map<String , ClientHandler> playerHandlers) { // The logic will be changed later (Cards showing up)
+    public void startGame(List<ClientHandler> playerHandlers) { // The logic will be changed later (Cards showing up)
         Random rand = new Random();
-        int randNumber = rand.nextInt(0, 2);
+        int randNumber = rand.nextInt(0, 4);
 //        playerHandlers.get(randNumber).setHakem(true);
-        List<ClientHandler> valuesList = new ArrayList<>(playerHandlers.values());
+        List<ClientHandler> valuesList = new ArrayList<>(playerHandlers);
         valuesList.get(randNumber).setHakem(true);
     }
 
     //dealing the random cards to each player
-    public Cards[] dealCards(ClientHandler player) {
+    public Cards[] dealCards(ClientHandler player) throws IOException {
         playerCards = new Cards[13];
         Random rand = new Random();
-        for (int i = 0; i < 13; i++) {
+        for(int i = 0; i < 13; i++) {
             int randNum = rand.nextInt(0, allCards.size());
             playerCards[i] = allCards.get(randNum);
             allCards.remove(randNum);
@@ -127,10 +131,11 @@ public class Deal implements Serializable {
         return c;
     }
 
-    public void chooseHokm(Cards[] c) {
-        for (ClientHandler playerHandler : playerHandlers.values()) {
+    public void chooseHokm(Cards[] c) throws IOException {
+        for (ClientHandler playerHandler : playerHandlers) {
             if (playerHandler.getIsHakem()) {
                 new HokmFrame(c , playerHandler);
+                playerHandler.sendObject("[SERVER] : It's your turn. pick a Card to play.");
             }
         }
     }

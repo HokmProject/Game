@@ -1,5 +1,7 @@
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -21,7 +23,10 @@ public class MainFrame extends JFrame implements Serializable {
     //    static ImageIcon c1Image, c2Image, c3Image, c4Image , c5Image, c6Image, c7Image, c8Image , c9Image, c10Image, c11Image, c12Image , c13Image;
     static ImageIcon ImgIcons;
     static JButton[] buttons;
-    static JButton startButton;
+    private JButton startButton;
+    private static JButton LastClicked;
+    private boolean isYourTurn;
+    private boolean cardsDistributed;
     //___________________________________________________________________________________________
 
     public MainFrame(String username, String token, boolean isCreator, ObjectInputStream ois) {
@@ -36,8 +41,11 @@ public class MainFrame extends JFrame implements Serializable {
         messageArea.setBounds(20 , 20 , 793 , 500);
         messageArea.setEditable(false);
         messageArea.setFont(messageArea.getFont().deriveFont(15f));
+        JScrollPane scrollPane = new JScrollPane(messageArea);
+        scrollPane.setBounds(20, 20, 793, 500);
+        add(scrollPane);
 //        add(new JScrollPane(messageArea), BorderLayout.CENTER);
-        add(messageArea);
+//        add(messageArea);
 
 //        MainFrameScore = Score.score(this);
 //        CardsInterfaceFrame = CardsInterface.cards(this);
@@ -46,12 +54,12 @@ public class MainFrame extends JFrame implements Serializable {
 
         points = points2 = rounds2 = rounds = "0";
         JLabel team1score= new JLabel("team 1: "+points+"                                               rounds: "+rounds);
-        team1score.setBounds(10, 620, 400, 40);
+        team1score.setBounds(10, 670, 400, 40);
         team1score.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.black));
         add(team1score);
 
         JLabel team2score = new JLabel("team 2: "+points2+"                                               rounds: "+rounds2);
-        team2score.setBounds(10, 670, 400, 40);
+        team2score.setBounds(420 , 670, 400, 40);
         team2score.setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.black));
         add(team2score);
 
@@ -107,24 +115,14 @@ public class MainFrame extends JFrame implements Serializable {
         add(b10);add(b11);add(b12);
         add(b13);
 
-        CardsInterface.buttonActionListener(b1);
-        CardsInterface.buttonActionListener(b2);
-        CardsInterface.buttonActionListener(b3);
-        CardsInterface.buttonActionListener(b4);
-        CardsInterface.buttonActionListener(b5);
-        CardsInterface.buttonActionListener(b6);
-        CardsInterface.buttonActionListener(b7);
-        CardsInterface.buttonActionListener(b8);
-        CardsInterface.buttonActionListener(b9);
-        CardsInterface.buttonActionListener(b10);
-        CardsInterface.buttonActionListener(b11);
-        CardsInterface.buttonActionListener(b12);
-        CardsInterface.buttonActionListener(b13);
+
+
+
 
 //__________________________________________________________________________________________________________
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(825, 800);
+        setSize(845, 825);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
@@ -135,16 +133,20 @@ public class MainFrame extends JFrame implements Serializable {
 
 
         if (isCreator) { // if it's Creator , then the start button will be shown for him
-            JButton startButton = new JButton("Start Game");
+            startButton = new JButton("Start Game");
             startButton.addActionListener(e -> {
                 try {
                     Client.sendMessage("START_GAME " + token);
-                    startButton.setEnabled(false);// sends a request to the ClientHandler
+//                    startButton.setEnabled(false);// sends a request to the ClientHandler
                 } catch (IOException ex) {
+
                     throw new RuntimeException(ex);
                 }
             });
             add(startButton, BorderLayout.SOUTH);
+
+
+
         }
 
         setVisible(true);
@@ -166,8 +168,13 @@ public class MainFrame extends JFrame implements Serializable {
                             if (isCreator) {
                                 messageArea.append("[CREATOR] : You can Start Now !!! \n");
                             }
-                        }else if (response.equals("DISABLE_START_BUTTON")){
-                            startButton.setEnabled(false);
+                        }else if (response.startsWith("DISABLE_START_BUTTON")){
+                            if(isCreator) {
+                                startButton.setEnabled(false);
+                            }
+                        }else if (response.equals("ENABLE_CARD_BUTTON " + username)){
+                            LastClicked.setEnabled(true);
+//                            break;
                         }
 //                        }else if (response.startsWith("SENDING_CARDS_PATH ")){
 //                            String[] command = response.split(" ");
@@ -185,7 +192,38 @@ public class MainFrame extends JFrame implements Serializable {
                             String ImgPath = PlayerCards.get(i).getImgPath();
                             ImageIcon image = new ImageIcon(ImgPath);
                             buttons[i].setIcon(image);
+
+
+
+//                                buttonActionListener(b1 , PlayerCards.get(0));
+//                                buttonActionListener(b2 , PlayerCards.get(1));
+//                                buttonActionListener(b3 , PlayerCards.get(2));
+//                                buttonActionListener(b4 , PlayerCards.get(3));
+//                                buttonActionListener(b5 , PlayerCards.get(4));
+//                                buttonActionListener(b6 , PlayerCards.get(5));
+//                                buttonActionListener(b7 , PlayerCards.get(6));
+//                                buttonActionListener(b8 , PlayerCards.get(7));
+//                                buttonActionListener(b9 , PlayerCards.get(8));
+//                                buttonActionListener(b10 , PlayerCards.get(9));
+//                                buttonActionListener(b11 , PlayerCards.get(10));
+//                                buttonActionListener(b12 , PlayerCards.get(11));
+//                                buttonActionListener(b13 , PlayerCards.get(12));
                             }
+                        for (int j = 0; j < buttons.length; j++) {
+                            final int index = j;
+                            buttons[j].addActionListener(new ActionListener() {
+                                @Override
+                                public void actionPerformed(ActionEvent e) {
+                                    buttons[index].setEnabled(false);
+                                    LastClicked = buttons[index];
+                                    try {
+                                        Client.sendMessage(PlayerCards.get(index));
+                                    } catch (IOException ex) {
+                                        throw new RuntimeException(ex);
+                                    }
+                                }
+                            });
+                        }
                         }
                     }
             } catch (IOException e) {
@@ -200,5 +238,18 @@ public class MainFrame extends JFrame implements Serializable {
     public JButton[] getButtons(){
         return buttons;
     }
-
+    public static void buttonActionListener(JButton b, Cards card) {
+        b.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                b.setEnabled(false);
+                LastClicked = b;
+                try {
+                    Client.sendMessage(card);
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
+            }
+        });
+    }
 }

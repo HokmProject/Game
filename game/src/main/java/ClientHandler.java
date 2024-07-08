@@ -11,6 +11,7 @@ class ClientHandler extends Thread implements Serializable {
     private boolean isHakem;
     private MainFrame mainframe;
     private ArrayList<Cards> playercards;
+    private String flag = null;
     public ClientHandler(Socket socket) {
         this.socket = socket;
         isHakem = false;
@@ -33,6 +34,8 @@ class ClientHandler extends Thread implements Serializable {
                     handleStartGame((String) command);
                 }else if(command instanceof MainFrame) {
                     mainframe = (MainFrame) command;
+                }else if(command instanceof Cards){
+                    handlePlayCard((Cards) command);
                 }
             }
         } catch (IOException e) {
@@ -62,6 +65,7 @@ class ClientHandler extends Thread implements Serializable {
         }
         Server.clientHandlers.add(clienthandler);
     }
+
     private void handleCreateGame(String command) throws IOException {
         // Example: CREATE_GAME username
         String[] tokens = command.split(" ");
@@ -135,13 +139,43 @@ class ClientHandler extends Thread implements Serializable {
         if (game != null && game.isCreator(username) && game.isFull()) { // if the game exists and the username of the one that sent the request is the same as Creator and the game is Filled
             game.startGame(); // starts the game
             game.notifyPlayers("[SERVER] : !!! Game Started by " + username + " !!!");
-            sendObject("DISABLE_START_BUTTON");
+//            sendObject("DISABLE_START_BUTTON");
         } else if (!game.isFull()) {
 
             oos.writeObject("[ERROR] : Game is not full. Cannot Start the Game . Waiting for Players ...");// sends a message to Client
         } else {
 
             oos.writeObject("[ERROR] : You are not the game creator or game not found.");
+        }
+    }
+
+    private void handlePlayCard(Cards card) throws IOException {
+        ArrayList<ClientHandler> reorderedPlayers = game.reorderbyHakem(game.getPlayers());
+        for(int i = 0; i < reorderedPlayers.size(); i++) {
+            System.out.println(i+1 +" : " + reorderedPlayers.get(i).getUsername() + " " + reorderedPlayers.get(i).isHakem);
+        }
+        if(game.getTurn() == 0 && game.getHakem() == username){
+            game.notifyPlayers(username + " played : " + card.getName());
+            reorderedPlayers.get(1).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            game.incrementTurn();
+        } else if (game.getTurn() == 1 && reorderedPlayers.get(1).getUsername() == username) {
+            game.notifyPlayers(username + " played : " + card.getName());
+            reorderedPlayers.get(2).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            game.incrementTurn();
+        } else if (game.getTurn() == 2 && reorderedPlayers.get(2).getUsername() == username) {
+            game.notifyPlayers(username + " played : " + card.getName());
+            reorderedPlayers.get(3).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            game.incrementTurn();
+        }else if(game.getTurn() == 3 && reorderedPlayers.get(3).getUsername() == username) {
+            game.notifyPlayers(username + " played : " + card.getName());
+            reorderedPlayers.get(0).sendObject("[SERVER] : It's your turn. pick a Card to play.");
+            game.incrementTurn();
+        }
+//        if(game.getTurn() == 1 )
+//        else if(game.getTurn() == 1)
+        else {
+            oos.writeObject("[ERROR] : Wait for Your Turn ...");
+            oos.writeObject("ENABLE_CARD_BUTTON " + getUsername());
         }
     }
 
@@ -195,5 +229,28 @@ class ClientHandler extends Thread implements Serializable {
     }
     public String getUsername(){
         return this.username;
+    }
+
+    public ClientHandler[] getTeam(ClientHandler handler){
+        for(ClientHandler player : game.Team1){
+            if(player == handler){
+                return game.Team1;
+            }
+        }
+        for(ClientHandler player2 : game.Team2) {
+            if (player2 == handler) {
+                return game.Team2;
+            }
+        }
+        return null;
+    }
+
+    public boolean hasHokm(String Hokm) {
+        for (Cards card : playercards) {
+            if (card.getSuit().equals(Hokm)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

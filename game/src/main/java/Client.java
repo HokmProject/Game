@@ -9,10 +9,10 @@ import java.util.List;
 
 public class Client implements Serializable{
     private static final String SERVER_ADDRESS = "localhost";
-    private static final int SERVER_PORT = 12345;
+    private static final int SERVER_PORT = 1234;
     private Socket socket;
     private ObjectInputStream ois;
-    private static ObjectOutputStream oos;
+    static ObjectOutputStream oos;
     private JFrame mainMenuFrame;
 
     private JFrame mainFrame;
@@ -66,7 +66,7 @@ public class Client implements Serializable{
                     sendMessage(new MainFrame(username , token , true , ois));
 //                    sendMessage(this);
 //                    addClientMainFrame(username , mainFrame);
-                    JOptionPane.showMessageDialog(null, response);
+//                    JOptionPane.showMessageDialog(null, response);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -131,7 +131,8 @@ public class Client implements Serializable{
     }
 
     public static void sendMessage(Object object) throws IOException {
-        oos.writeObject(object);// this is where the requests go to ClientHandler's BufferedReader
+        oos.writeObject(object);// this is where the requests go to ClientHandler's ObjectInputStream
+        oos.flush();
     }
 
     public boolean getIsHakem() {

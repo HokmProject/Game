@@ -55,6 +55,7 @@ public class HokmFrame extends JFrame {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+
             }
         });
         kheshtButton.addActionListener(new ActionListener() {
@@ -68,6 +69,7 @@ public class HokmFrame extends JFrame {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+
             }
         });
         geshnizButton.addActionListener(new ActionListener() {
@@ -81,6 +83,7 @@ public class HokmFrame extends JFrame {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+
             }
         });
         delButton.addActionListener(new ActionListener() {
@@ -94,6 +97,7 @@ public class HokmFrame extends JFrame {
                 } catch (IOException ex) {
                     throw new RuntimeException(ex);
                 }
+
             }
         });
 
