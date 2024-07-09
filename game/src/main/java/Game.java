@@ -1,5 +1,6 @@
 import java.io.IOException;
 import java.io.Serializable;
+import java.sql.*;
 import java.util.*;
 
 class Game implements Serializable {
@@ -47,7 +48,7 @@ class Game implements Serializable {
         return creator.equals(username);
     }
 
-    public void startGame(ClientHandler WinningPlayer) throws IOException {
+    public void startGame(ClientHandler WinningPlayer) throws IOException, SQLException {
         if (players.size() == 4) {
             if (!started) {
                 started = true;
@@ -57,6 +58,16 @@ class Game implements Serializable {
                 Team2 = new Team(playerHandlers.get(1), playerHandlers.get(3));
 
                 getCreatorHandler().sendObject("DISABLE_START_BUTTON");
+
+                Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+                String sql = "INSERT INTO Games (token , Team1 , Team2 , Creator) VALUES (?, ? , ? , ?)";
+                PreparedStatement statement = connection.prepareStatement(sql);
+                statement.setString(1, token);
+                statement.setString(2, Team1.getid());
+                statement.setString(3, Team2.getid());
+                statement.setString(4, creator);
+                statement.executeUpdate();
+
             }
             else{
                 notifyPlayers("RE_ENABLE_ALL_BUTTONS");
@@ -178,7 +189,7 @@ class Game implements Serializable {
         return null;
     }
 
-    public void playTurn(Cards card) throws IOException{
+    public void playTurn(Cards card) throws IOException, SQLException {
         ClientHandler currentPlayer = playerHandlers.get(currentPlayerIndex);
         if(getTurn() % 4 == 0){
             //if it's the first round of the set , it sets the suit to the first card's current suit
@@ -283,7 +294,7 @@ class Game implements Serializable {
     }
 
 
-    public void evaluateHand(ArrayList<ClientHandler> playerHandlers) throws IOException {
+    public void evaluateHand(ArrayList<ClientHandler> playerHandlers) throws IOException, SQLException {
         Cards winningCard = cardsOnTable.get(0);
         ClientHandler winningPlayer = playerHandlers.get(0);
 
@@ -307,7 +318,7 @@ class Game implements Serializable {
         // Handle scoring logic here
     }
 
-    private void upadateTeamScore(ClientHandler winningPlayer) throws IOException {
+    private void upadateTeamScore(ClientHandler winningPlayer) throws IOException, SQLException {
         Team team = winningPlayer.getTeam(winningPlayer);
         Team losingTeam = null;
         for(ClientHandler player : playerHandlers){

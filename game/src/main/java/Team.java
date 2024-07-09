@@ -1,19 +1,22 @@
 import java.io.IOException;
+import java.sql.*;
 
 public class Team {
     ClientHandler player1;
     ClientHandler player2;
     private int Score = 6;
     private int Round = 0;
+    private int Teamid = 0;
 
     public Team(ClientHandler player1, ClientHandler player2) throws IOException {
         this.player1 = player1;
         this.player2 = player2;
         player1.sendObject("[SERVER] : Your TeamMate is {"+ player2.getUsername()+"}");
         player2.sendObject("[SERVER] : Your TeamMate is {"+ player1.getUsername()+"}");
+        Teamid++;
     }
 
-    public void updateScore(Team losingTeam , Game game , ClientHandler winningPlayer) throws IOException {
+    public void updateScore(Team losingTeam , Game game , ClientHandler winningPlayer) throws IOException, SQLException {
         Score++;
         player1.sendObject("[SERVER] : Your Team has won the Hand!");
         player1.sendObject("SCORE " + Score);
@@ -135,11 +138,22 @@ public class Team {
     private String getScore() {
         return String.valueOf(Score);
     }
+    String getid() {
+        return String.valueOf(Teamid);
+    }
 
-    private void updateRound(Team losingTeam) throws IOException {
+    private void updateRound(Team losingTeam) throws IOException, SQLException {
         player1.sendObject("[SERVER] : CONGRATS !!! Your Team Won the Game !!!");
         player2.sendObject("[SERVER] : CONGRATS !!! Your Team Won the Game !!!");
         losingTeam.player1.sendObject("[SERVER] : Your Team Lost !! GAME OVER !!");
         losingTeam.player2.sendObject("[SERVER] : Your Team Lost !! GAME OVER !!");
+
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+        String sql = "INSERT INTO Teams (Player1 , Player2 , RoundsWin) VALUES (?, ? , ?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, player1.getUsername());
+        statement.setString(2, player2.getUsername());
+        statement.setString(3, getRound());
+        statement.executeUpdate();
     }
 }

@@ -1,5 +1,6 @@
 import java.io.*;
 import java.net.Socket;
+import java.sql.*;
 import java.util.ArrayList;
 
 class ClientHandler extends Thread implements Serializable {
@@ -46,6 +47,8 @@ class ClientHandler extends Thread implements Serializable {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         } finally {
             try {
                 socket.close();
@@ -70,7 +73,7 @@ class ClientHandler extends Thread implements Serializable {
         Server.clientHandlers.add(clienthandler);
     }
 
-    private void handleCreateGame(String command) throws IOException {
+    private void handleCreateGame(String command) throws IOException, SQLException {
         // Example: CREATE_GAME username
         String[] tokens = command.split(" ");
         username = tokens[1];
@@ -86,9 +89,16 @@ class ClientHandler extends Thread implements Serializable {
         Server.waitingGames.add(game); // will be waiting for other players to join
         oos.writeObject("GAME_CREATED " + gameToken);// sends a request to Client's Input
         Server.clientHandlers.add(this);
+
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+        String sql = "INSERT INTO Players (UserName, GameToken) VALUES (?, ?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, username);
+        statement.setString(2, gameToken);
+        statement.executeUpdate();
     }
 
-    private void handleJoinGame(String command) throws IOException {
+    private void handleJoinGame(String command) throws IOException, SQLException {
         // Example: JOIN_GAME username token
         String[] tokens = command.split(" ");
         username = tokens[1];
@@ -110,9 +120,18 @@ class ClientHandler extends Thread implements Serializable {
             game.notifyPlayers("[SERVER] : All players are joined. You can start the game now !");
             Server.waitingGames.remove(game);
         }
+
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+        String sql = "INSERT INTO Players (UserName, GameToken) VALUES (?, ?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, username);
+        statement.setString(2, token);
+        statement.executeUpdate();
+
+
     }
 
-    private void handleJoinRandomGame(String command) throws IOException {
+    private void handleJoinRandomGame(String command) throws IOException, SQLException {
         // Example: JOIN_RANDOM_GAME username
         String[] tokens = command.split(" ");
         username = tokens[1];
@@ -132,10 +151,17 @@ class ClientHandler extends Thread implements Serializable {
         if (game.isFull()) {
             game.notifyPlayers("[SERVER] : All players are joined."); // sends a message to all players of the game
             Server.waitingGames.remove(game); // it gets removed from the list of waiting games because it's full
+
+            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+            String sql = "INSERT INTO Players (UserName, GameToken) VALUES (?, ?)";
+            PreparedStatement statement = connection.prepareStatement(sql);
+            statement.setString(1, username);
+            statement.setString(2, game.getToken());
+            statement.executeUpdate();
         }
     }
 
-    private void handleStartGame(String command) throws IOException {
+    private void handleStartGame(String command) throws IOException, SQLException {
         // Example: START_GAME token
         String[] tokens = command.split(" ");
         String token = tokens[1];
@@ -153,7 +179,7 @@ class ClientHandler extends Thread implements Serializable {
         }
     }
 
-    private void handlePlayCard(Cards card) throws IOException {
+    private void handlePlayCard(Cards card) throws IOException, SQLException {
         game.reorderbyHakem(game.getPlayers());
         if (game.getTurn() == 0 && game.getHakem() == username) {
             game.setCurrentPlayerIndex(0);
