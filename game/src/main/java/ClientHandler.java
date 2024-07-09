@@ -12,7 +12,9 @@ class ClientHandler extends Thread implements Serializable {
     private MainFrame mainframe;
     private ArrayList<Cards> playercards;
     private String flag = null;
-    public ClientHandler(Socket socket) {
+    private ArrayList<ClientHandler> reorderedPlayers;
+
+    public ClientHandler(Socket socket) throws IOException {
         this.socket = socket;
         isHakem = false;
         this.playercards = new ArrayList<>();
@@ -32,9 +34,11 @@ class ClientHandler extends Thread implements Serializable {
                     handleJoinRandomGame((String) command);
                 } else if (command instanceof String && ((String) command).startsWith("START_GAME")) {
                     handleStartGame((String) command);
-                }else if(command instanceof MainFrame) {
+                } else if (command instanceof MainFrame) {
                     mainframe = (MainFrame) command;
-                }else if(command instanceof Cards){
+                } else if (command instanceof ArrayList ) {
+                    playercards = (ArrayList) command;
+                } else if (command instanceof Cards) {
                     handlePlayCard((Cards) command);
                 }
             }
@@ -59,7 +63,7 @@ class ClientHandler extends Thread implements Serializable {
 
     @Deprecated
     private void handleAddClient(ClientHandler clienthandler) throws IOException {
-        if(Server.clientHandlers.contains(clienthandler)) {
+        if (Server.clientHandlers.contains(clienthandler)) {
             oos.writeObject("[ERROR] : Client Already exists !!");
             return;
         }
@@ -71,7 +75,7 @@ class ClientHandler extends Thread implements Serializable {
         String[] tokens = command.split(" ");
         username = tokens[1];
         if (Server.activeUsers.contains(username)) { // if there is already a username
-             // send a request(message) to
+            // send a request(message) to
             oos.writeObject("[ERROR] : Username already exists.");
             return;
         }
@@ -137,7 +141,7 @@ class ClientHandler extends Thread implements Serializable {
         String token = tokens[1];
         game = Server.activeGames.get(token); // gets the game from server
         if (game != null && game.isCreator(username) && game.isFull()) { // if the game exists and the username of the one that sent the request is the same as Creator and the game is Filled
-            game.startGame(); // starts the game
+            game.startGame(this); // starts the game
             game.notifyPlayers("[SERVER] : !!! Game Started by " + username + " !!!");
 //            sendObject("DISABLE_START_BUTTON");
         } else if (!game.isFull()) {
@@ -150,29 +154,22 @@ class ClientHandler extends Thread implements Serializable {
     }
 
     private void handlePlayCard(Cards card) throws IOException {
-        ArrayList<ClientHandler> reorderedPlayers = game.reorderbyHakem(game.getPlayers());
-        for(int i = 0; i < reorderedPlayers.size(); i++) {
-            System.out.println(i+1 +" : " + reorderedPlayers.get(i).getUsername() + " " + reorderedPlayers.get(i).isHakem);
-        }
-        if(game.getTurn() == 0 && game.getHakem() == username){
+        game.reorderbyHakem(game.getPlayers());
+        if (game.getTurn() == 0 && game.getHakem() == username) {
             game.setCurrentPlayerIndex(0);
-            game.playTurn(card , reorderedPlayers);
-        }
-        else if (game.getTurn() % 4 == 1 && reorderedPlayers.get(1).getUsername() == username) {
+            game.playTurn(card);
+        } else if (game.getTurn() % 4 == 1 && game.getPlayers().get(1).getUsername() == username) {
             game.setCurrentPlayerIndex(1);
-            game.playTurn(card , reorderedPlayers);
-        }
-        else if (game.getTurn() % 4 == 2 && reorderedPlayers.get(2).getUsername() == username) {
+            game.playTurn(card);
+        } else if (game.getTurn() % 4 == 2 && game.getPlayers().get(2).getUsername() == username) {
             game.setCurrentPlayerIndex(2);
-            game.playTurn(card , reorderedPlayers);
-        }
-        else if(game.getTurn() % 4 == 3 && reorderedPlayers.get(3).getUsername() == username) {
+            game.playTurn(card);
+        } else if (game.getTurn() % 4 == 3 && game.getPlayers().get(3).getUsername() == username) {
             game.setCurrentPlayerIndex(3);
-            game.playTurn(card , reorderedPlayers);
-        }
-        else if(game.getTurn() % 4 == 0 && reorderedPlayers.get(0).getUsername() == username) {
+            game.playTurn(card);
+        } else if (game.getTurn() % 4 == 0 && game.getPlayers().get(0).getUsername() == username) {
             game.setCurrentPlayerIndex(0);
-            game.playTurn(card , reorderedPlayers);
+            game.playTurn(card);
         }
 //        else if(game.getTurn() == 1)
         else {
@@ -201,24 +198,31 @@ class ClientHandler extends Thread implements Serializable {
 
         return sb.toString();
     }
+
     public boolean getIsHakem() {
         return this.isHakem;
     }
+
     public void setHakem(boolean bool) {
         this.isHakem = bool;
     }
+
     public void setCards(ArrayList<Cards> cards) {
         this.playercards = cards;
     }
+
     public ArrayList<Cards> getCards() {
         return this.playercards;
     }
+
     public void setMainFrame(MainFrame mainframe) {
         this.mainframe = mainframe;
     }
+
     public MainFrame getMainFrame() {
         return this.mainframe;
     }
+
     public void sendObject(Object object) throws IOException {
         oos.writeObject(object);// sends an object to MainFrame
     }
@@ -226,18 +230,20 @@ class ClientHandler extends Thread implements Serializable {
     void sendCards(ArrayList<Cards> cards) throws IOException {
         oos.writeObject(cards);
     }
+
     Game getGame() throws IOException {
         return this.game;
     }
-    public String getUsername(){
+
+    public String getUsername() {
         return this.username;
     }
 
-    public Team getTeam(ClientHandler player){
-        if(game.Team1.player1 == player || game.Team1.player2 == player){
+    public Team getTeam(ClientHandler player) {
+        if (game.Team1.player1 == player || game.Team1.player2 == player) {
             return game.Team1;
         }
-        if(game.Team2.player1 == player || game.Team2.player2 == player){
+        if (game.Team2.player1 == player || game.Team2.player2 == player) {
             return game.Team2;
         }
         return null;
@@ -252,12 +258,19 @@ class ClientHandler extends Thread implements Serializable {
         return false;
     }
 
-    public boolean isSuitAvailable(String suit){
-        for(Cards card : playercards){
-            if(card.getSuit().equals(suit)){
+    public boolean isSuitAvailable(String suit) {
+        for (Cards card : playercards) {
+            if (card != null && card.getSuit().equals(suit)) {
                 return true;
             }
         }
         return false;
+    }
+    public void removeCard(Cards card) {
+        for (Cards CARD : playercards) {
+            if (CARD == card) {
+               playercards.set(playercards.indexOf(card), null);
+            }
+        }
     }
 }

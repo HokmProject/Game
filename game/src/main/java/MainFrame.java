@@ -29,6 +29,7 @@ public class MainFrame extends JFrame implements Serializable {
     private boolean isYourTurn;
     private boolean cardsDistributed;
     private int LastCardIndex;
+    private boolean anotherRound = false;
     //___________________________________________________________________________________________
 
     public MainFrame(String username, String token, boolean isCreator, ObjectInputStream ois) {
@@ -161,8 +162,15 @@ public class MainFrame extends JFrame implements Serializable {
                     object = ois.readObject();
                     if(object instanceof String) {
                         String response = (String) object;
-
-                        if(
+                        if(response.equals("[SERVER] : All players are joined.")){
+                            if(isCreator){
+                                messageArea.append(response +  "You can start the game now ! \n");
+                            }
+                            else{
+                                messageArea.append(response + " Waiting for the creator to start the game... \n");
+                            }
+                        }
+                        else if(
                                 response.startsWith("[CREATOR]")
                                 || response.startsWith("[GAME]")
                                 || response.startsWith("[SERVER]")
@@ -202,15 +210,14 @@ public class MainFrame extends JFrame implements Serializable {
                             rounds2 = Integer.parseInt(command[1]);
                             team2score.setText("team 2: "+points2+"                                               rounds: "+rounds2);
                         }
-//                        }else if (response.startsWith("SENDING_CARDS_PATH ")){
-//                            String[] command = response.split(" ");
-//                            String Path = command[1];
-//                            String[] cardPath = Path.split("_");
-//                            for(int i = 0 ; i < cardPath.length ; i++){
-//                                ImageIcon imgpath = new ImageIcon(cardPath[i]);
-//                                buttons[i].setIcon(imgpath);
-//                            }
-                            // Handle sending cards logic here
+                        else if(response.equals("RE_ENABLE_ALL_BUTTONS")){
+                            for(int i=0; i < buttons.length; i++) {
+                                buttons[i].setEnabled(true);
+                            }
+                        } else if (response.equals("ANOTHER_ROUND")) {
+                            anotherRound = true;
+                        }
+                        // Handle sending cards logic here
                     // this is where the messages are shown
                         }
                     else if(object instanceof ArrayList){
@@ -219,40 +226,27 @@ public class MainFrame extends JFrame implements Serializable {
                             String ImgPath = PlayerCards.get(i).getImgPath();
                             ImageIcon image = new ImageIcon(ImgPath);
                             buttons[i].setIcon(image);
-
-
-
-//                                buttonActionListener(b1 , PlayerCards.get(0));
-//                                buttonActionListener(b2 , PlayerCards.get(1));
-//                                buttonActionListener(b3 , PlayerCards.get(2));
-//                                buttonActionListener(b4 , PlayerCards.get(3));
-//                                buttonActionListener(b5 , PlayerCards.get(4));
-//                                buttonActionListener(b6 , PlayerCards.get(5));
-//                                buttonActionListener(b7 , PlayerCards.get(6));
-//                                buttonActionListener(b8 , PlayerCards.get(7));
-//                                buttonActionListener(b9 , PlayerCards.get(8));
-//                                buttonActionListener(b10 , PlayerCards.get(9));
-//                                buttonActionListener(b11 , PlayerCards.get(10));
-//                                buttonActionListener(b12 , PlayerCards.get(11));
-//                                buttonActionListener(b13 , PlayerCards.get(12));
                             }
-                        for (int j = 0; j < buttons.length; j++) {
-                            final int index = j;
-                            buttons[j].addActionListener(new ActionListener() {
-                                @Override
-                                public void actionPerformed(ActionEvent e) {
-                                    buttons[index].setEnabled(false);
-                                    LastClicked = buttons[index];
+                            if(!anotherRound){
+                                for (int j = 0; j < buttons.length; j++) {
+                                    final int index = j;
+                                    buttons[j].addActionListener(new ActionListener() {
+                                        @Override
+                                        public void actionPerformed(ActionEvent e) {
+                                            buttons[index].setEnabled(false);
+                                            LastClicked = buttons[index];
 //                                    LastCard = PlayerCards.get(index);
-                                    LastCardIndex = index;
-                                    try {
-                                        Client.sendMessage(PlayerCards.get(index));
-                                    } catch (IOException ex) {
-                                        throw new RuntimeException(ex);
-                                    }
+                                            LastCardIndex = index;
+                                            try {
+                                                Client.sendMessage(PlayerCards);
+                                                Client.sendMessage(PlayerCards.get(index));
+                                            } catch (IOException ex) {
+                                                throw new RuntimeException(ex);
+                                            }
+                                        }
+                                    });
                                 }
-                            });
-                        }
+                            }
                         }
                     }
             } catch (IOException e) {

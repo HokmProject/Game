@@ -12,9 +12,8 @@ public class Deal implements Serializable {
     private List<Client> clients;
     public Cards[] playerCards;
 
-    public Deal(List<ClientHandler> playerHandlers , List<Client> clients) {
+    public Deal(List<ClientHandler> playerHandlers) {
         this.playerHandlers = playerHandlers;
-        this.clients = clients;
         //pass a ClientHandler from Game
         startGame(playerHandlers);
 
@@ -30,24 +29,38 @@ public class Deal implements Serializable {
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-//            updateGUI(playerHandler.getCards().toArray(new Cards[0]))
-//                    try {
-//                        ArrayList<String> ImagePaths = new ArrayList<>();
-//                        StringBuilder ImagesString = new StringBuilder();
-//                        for (Cards card : playerHandler.getCards()) {
-//                            ImagesString.append(card.getImgPath()).append("_");
-//                            ImagePaths.add(card.getImgPath());
-//                        }
-//                        playerHandler.sendObject("SENDING_CARDS_PATH " + ImagesString);
-//                    } catch (IOException e) {
-//                        throw new RuntimeException(e);
-//                    }
                     try {
                         playerHandler.sendCards(playerHandler.getCards());
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
-                    ;}
+                    ;
+                }
+        );
+    }
+
+    public Deal(List<ClientHandler> playerHandlers, boolean started) {
+        this.playerHandlers = playerHandlers;
+
+        allCards.clear();
+        allCards.addAll(List.of(Cards.pick));
+        allCards.addAll(List.of(Cards.del));
+        allCards.addAll(List.of(Cards.geshniz));
+        allCards.addAll(List.of(Cards.khesht));
+
+        playerHandlers.forEach(playerHandler -> {
+                    try {
+                        playerHandler.setCards(sortCards(dealCards(playerHandler)));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    try {
+                        playerHandler.sendCards(playerHandler.getCards());
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    ;
+                }
         );
     }
 
@@ -64,28 +77,17 @@ public class Deal implements Serializable {
     public Cards[] dealCards(ClientHandler player) throws IOException {
         playerCards = new Cards[13];
         Random rand = new Random();
-        for(int i = 0; i < 13; i++) {
+        for (int i = 0; i < 13; i++) {
             int randNum = rand.nextInt(0, allCards.size());
             playerCards[i] = allCards.get(randNum);
             allCards.remove(randNum);
-            if(i == 5 && player.getIsHakem()){
+            if (i == 5 && player.getIsHakem()) {
                 chooseHokm(playerCards);
             }
         }
         //this happens after assigning cards to each player
         return playerCards;
     }
-
-
-//    public void updateGUI(Cards[] playerCards , ClientHandler playerHandler) {
-//        MainFrame mainframe = playerHandler.getMainFrame().get(0);
-//        JButton buttons[] = mainframe.getButtons();// * Error : return a null mainframe
-//        for (int i = 0; i < playerCards.length ; i++) {
-//            String ImgPath = playerCards[i].getImgPath();
-//            ImageIcon image = new ImageIcon(ImgPath);
-//            buttons[i].setIcon(image);
-//        }
-//    }
 
     //sorting the cards by suit and value
     private ArrayList<Cards> sortCards(Cards[] c) {
@@ -135,10 +137,10 @@ public class Deal implements Serializable {
     public void chooseHokm(Cards[] c) throws IOException {
         for (ClientHandler playerHandler : playerHandlers) {
             if (playerHandler.getIsHakem()) {
-                new HokmFrame(c , playerHandler);
+                new HokmFrame(c, playerHandler);
                 playerHandler.sendObject("[SERVER] : It's your turn. pick a Card to play.");
             }
         }
     }
-
 }
+

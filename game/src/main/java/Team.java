@@ -3,7 +3,7 @@ import java.io.IOException;
 public class Team {
     ClientHandler player1;
     ClientHandler player2;
-    private int Score = 0;
+    private int Score = 6;
     private int Round = 0;
 
     public Team(ClientHandler player1, ClientHandler player2) throws IOException {
@@ -13,7 +13,7 @@ public class Team {
         player2.sendObject("[SERVER] : Your TeamMate is {"+ player1.getUsername()+"}");
     }
 
-    public void updateScore(Team losingTeam) throws IOException {
+    public void updateScore(Team losingTeam , Game game , ClientHandler winningPlayer) throws IOException {
         Score++;
         player1.sendObject("[SERVER] : Your Team has won the Hand!");
         player1.sendObject("SCORE " + Score);
@@ -57,6 +57,8 @@ public class Team {
                     losingTeam.player1.sendObject("OPPONENT_ROUND " + Round);
                     losingTeam.player2.sendObject("OPPONENT_ROUND " + Round);
 
+                    game.startGame(winningPlayer);
+
                     if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
                         updateRound(losingTeam);
                     }
@@ -82,6 +84,8 @@ public class Team {
 
                     losingTeam.player1.sendObject("OPPONENT_ROUND " + Round);
                     losingTeam.player2.sendObject("OPPONENT_ROUND " + Round);
+
+                    game.startGame(winningPlayer);
 
                     if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
                         updateRound(losingTeam);
@@ -109,6 +113,8 @@ public class Team {
 
                 losingTeam.player1.sendObject("OPPONENT_ROUND " + Round);
                 losingTeam.player2.sendObject("OPPONENT_ROUND " + Round);
+
+                game.startGame(winningPlayer);
 
                 if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
                     updateRound(losingTeam);
