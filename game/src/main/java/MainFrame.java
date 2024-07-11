@@ -216,6 +216,8 @@ public class MainFrame extends JFrame implements Serializable {
                             }
                         } else if (response.equals("ANOTHER_ROUND")) {
                             anotherRound = true;
+                        } else if (response.equals("GAME_OVER")) {
+                            this.dispose();
                         }
                         // Handle sending cards logic here
                     // this is where the messages are shown

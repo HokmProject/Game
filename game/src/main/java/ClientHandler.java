@@ -148,16 +148,17 @@ class ClientHandler extends Thread implements Serializable {
         game.addPlayer(username, this);
         oos.writeObject("JOINED_GAME " + game.getToken());
         Server.clientHandlers.add(this); // adds the ClientHandler to the Server's list of ClientHandlers
+
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
+        String sql = "INSERT INTO Players (UserName, GameToken) VALUES (?, ?)";
+        PreparedStatement statement = connection.prepareStatement(sql);
+        statement.setString(1, username);
+        statement.setString(2, game.getToken());
+        statement.executeUpdate();
+
         if (game.isFull()) {
             game.notifyPlayers("[SERVER] : All players are joined."); // sends a message to all players of the game
             Server.waitingGames.remove(game); // it gets removed from the list of waiting games because it's full
-
-            Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
-            String sql = "INSERT INTO Players (UserName, GameToken) VALUES (?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
-            statement.setString(1, username);
-            statement.setString(2, game.getToken());
-            statement.executeUpdate();
         }
     }
 

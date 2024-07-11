@@ -4,7 +4,7 @@ import java.sql.*;
 public class Team {
     ClientHandler player1;
     ClientHandler player2;
-    private int Score = 6;
+    private int Score = 0;
     private int Round = 0;
     private int Teamid = 0;
 
@@ -62,7 +62,7 @@ public class Team {
 
                     game.startGame(winningPlayer);
 
-                    if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
+                    if(Round == 7){
                         updateRound(losingTeam);
                     }
                 }
@@ -90,7 +90,7 @@ public class Team {
 
                     game.startGame(winningPlayer);
 
-                    if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
+                    if(Round == 7){
                         updateRound(losingTeam);
                     }
                 }
@@ -119,7 +119,7 @@ public class Team {
 
                 game.startGame(winningPlayer);
 
-                if(Integer.valueOf(Round + losingTeam.getRound()) == 7){
+                if(Round == 7){
                     updateRound(losingTeam);
                 }
             }
@@ -147,6 +147,10 @@ public class Team {
         player2.sendObject("[SERVER] : CONGRATS !!! Your Team Won the Game !!!");
         losingTeam.player1.sendObject("[SERVER] : Your Team Lost !! GAME OVER !!");
         losingTeam.player2.sendObject("[SERVER] : Your Team Lost !! GAME OVER !!");
+        player1.sendObject("GAME_OVER");
+        player2.sendObject("GAME_OVER");
+        losingTeam.player1.sendObject("GAME_OVER");
+        losingTeam.player2.sendObject("GAME_OVER");
 
         Connection connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/hokmgame" ,"root" , "Sadraahmadi83@");
         String sql = "INSERT INTO Teams (Player1 , Player2 , RoundsWin) VALUES (?, ? , ?)";
@@ -154,6 +158,13 @@ public class Team {
         statement.setString(1, player1.getUsername());
         statement.setString(2, player2.getUsername());
         statement.setString(3, getRound());
+        statement.executeUpdate();
+
+        sql = "INSERT INTO Teams (Player1 , Player2 , RoundsWin) VALUES (?, ? , ?)";
+        statement = connection.prepareStatement(sql);
+        statement.setString(1, losingTeam.player1.getUsername());
+        statement.setString(2, losingTeam.player2.getUsername());
+        statement.setString(3, losingTeam.getRound());
         statement.executeUpdate();
     }
 }
